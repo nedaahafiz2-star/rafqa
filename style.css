@@ -1,80 +1,684 @@
-/* --- تنسيق القائمة المنسدلة الجديدة للمستخدم --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #fcfbfa;               /* إضاءة خلفية بيضاء دافئة ومريحة */
+  --card-bg: #ffffff;
+  --primary: #ff7a00;         /* الهوية البرتقالية الدافئة لـ Rafqa */
+  --primary-soft: #fff2e6;    /* خلفيات برتقالية ناعمة للعناصر */
+  --accent: #ffb347;
+  --text-main: #2b2b2b;
+  --text-muted: #7a8194;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --shadow-soft: 0 14px 30px rgba(15, 23, 42, 0.05);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Cairo", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text-main);
+  direction: rtl;
+}
+
+/* Header */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: rgba(252, 251, 250, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.logo-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.site-name {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--text-main);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.icon-btn,
+.login-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(148, 163, 184, 0.15);
+  transform: translateY(-1px);
+}
+
+.login-btn {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.login-btn:hover {
+  background: #e06b00;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 122, 0, 0.2);
+}
+
+/* User Dropdown */
 .user-menu-container {
   position: relative;
-  display: inline-block;
 }
 
 .user-dropdown {
   position: absolute;
-  top: 110%;
+  top: 45px;
   left: 0;
-  background-color: var(--card-bg);
-  min-width: 170px;
-  box-shadow: 0px 10px 25px rgba(15, 23, 42, 0.15);
+  background: white;
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: var(--radius-md);
-  padding: 0.5rem 0;
-  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  width: 170px;
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  z-index: 200;
+  overflow: hidden;
 }
 
-.user-dropdown a, 
-.user-dropdown button {
-  color: var(--text-main);
-  padding: 0.65rem 1rem;
+.user-dropdown a, .user-dropdown button {
+  padding: 10px 15px;
   text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  text-align: right;
   background: none;
   border: none;
-  width: 100%;
-  text-align: right;
   cursor: pointer;
+  width: 100%;
   font-family: inherit;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  transition: background 0.2s ease, color 0.2s ease;
+  gap: 8px;
 }
 
-/* حركة التمرير الفاخرة بالهوية البرتقالية */
-.user-dropdown a:hover, 
-.user-dropdown button:hover {
+.user-dropdown a:hover, .user-dropdown button:hover {
   background-color: var(--primary-soft);
-  color: #ff7a00; 
+  color: var(--primary);
 }
 
-.user-dropdown i {
-  font-size: 0.95rem;
-  width: 18px;
+.dropdown-divider {
+  border: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+  margin: 0;
+}
+
+/* Cart count */
+.cart-count {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Search bar */
+.search-bar {
+  padding: 0.5rem 1.25rem 0.75rem;
+  background: var(--bg);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  font-family: inherit;
+  outline: none;
+}
+
+.search-bar input:focus {
+  border-color: var(--primary);
+}
+
+/* Hero */
+.hero {
+  padding: 2.5rem 1.25rem 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.hero-content {
+  max-width: 900px;
+  width: 100%;
+  background: linear-gradient(135deg, #fff3e6 0%, #ffffff 100%);
+  border-radius: 24px;
+  padding: 2.5rem 1.5rem;
+  box-shadow: var(--shadow-soft);
   text-align: center;
+}
+
+.hero-content h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+.hero-content p {
+  margin: 0 0 1.5rem;
   color: var(--text-muted);
 }
 
-.user-dropdown a:hover i, 
-.user-dropdown button:hover i {
-  color: #ff7a00;
+.primary-btn,
+.secondary-btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 999px;
+  padding: 0.65rem 1.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 
-/* فاصل داخل القائمة */
-.dropdown-divider {
-  border: 0;
-  border-top: 1px solid rgba(148, 163, 184, 0.2);
-  margin: 0.4rem 0;
+.primary-btn {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(255, 122, 0, 0.25);
 }
 
-/* زر تسجيل خروج مميز باللون الأحمر */
-.user-dropdown .dropdown-logout-btn {
+.primary-btn:hover {
+  transform: translateY(-1px);
+  background: #e06b00;
+  box-shadow: 0 12px 24px rgba(255, 122, 0, 0.35);
+}
+
+.secondary-btn {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.secondary-btn:hover {
+  background: #d1d5db;
+}
+
+/* Categories */
+.categories {
+  padding: 1rem 1.25rem 0.5rem;
+}
+
+.categories h2, .main-header h2 {
+  margin-bottom: 0.75rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  border-right: 4px solid var(--primary);
+  padding-right: 8px;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.category-card {
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  padding: 0.8rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.category-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 122, 0, 0.1);
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.cat-icon {
+  font-size: 1.4rem;
+}
+
+.cat-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Main / games grid */
+.main {
+  padding: 1.25rem;
+}
+
+.main-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+#gamesCount {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Game card */
+.game-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.game-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 30px rgba(255, 122, 0, 0.08);
+  border-color: var(--primary);
+}
+
+.game-thumb {
+  position: relative;
+  padding-top: 65%;
+  background: #e5e7eb;
+}
+
+.game-thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-body {
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex-grow: 1;
+}
+
+.game-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.game-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.game-price {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1.05rem;
+}
+
+.game-actions {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.add-btn {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--primary);
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: var(--primary);
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.add-btn:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Modals & Overlays */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 1.5rem;
+  max-width: 500px;
+  width: 92%;
+  box-shadow: var(--shadow-soft);
+  position: relative;
+}
+
+.close-modal {
+  position: absolute;
+  top: 0.8rem;
+  left: 0.8rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+}
+
+.close-modal:hover {
   color: #ef4444;
 }
-.user-dropdown .dropdown-logout-btn i {
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-body img {
+  width: 100%;
+  max-height: 250px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.modal-info h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.modal-price {
+  margin-top: 0.6rem;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--primary);
+}
+
+/* Cart panel FIX */
+.cart-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(350px, 100%);
+  background: #ffffff;
+  box-shadow: 8px 0 30px rgba(15, 23, 42, 0.15);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease-in-out;
+}
+
+.cart-panel.hidden {
+  display: none !important;
+  transform: translateX(-100%);
+}
+
+.cart-header {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cart-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.cart-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cart-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.cart-item-thumb {
+  width: 55px;
+  height: 55px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.cart-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cart-item-info {
+  flex: 1;
+  font-size: 0.85rem;
+}
+
+.cart-item-title {
+  font-weight: 600;
+}
+
+.cart-item-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.cart-remove {
+  border: none;
+  background: transparent;
   color: #ef4444;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
 }
-.user-dropdown .dropdown-logout-btn:hover {
-  background-color: #fef2f2;
-  color: #dc2626;
+
+.cart-footer {
+  padding: 1rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+  background: #fff;
 }
-.user-dropdown .dropdown-logout-btn:hover i {
-  color: #dc2626;
+
+.cart-total {
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+}
+
+/* Checkout Section */
+.checkout {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 160;
+}
+
+.checkout-inner {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 92%;
+  text-align: center;
+}
+
+.checkout-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 10px;
+}
+
+/* Utilities */
+.hidden {
+  display: none !important;
+}
+
+/* Media Queries */
+@media (min-width: 768px) {
+  .hero-content {
+    padding: 3rem 2.5rem;
+    text-align: right;
+  }
+
+  .hero-content h1 {
+    font-size: 2.2rem;
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .modal-body {
+    flex-direction: row;
+  }
+
+  .modal-body img {
+    width: 45%;
+    max-height: 100%;
+  }
+
+  .modal-info {
+    flex: 1;
+  }
+}
+
+/* ==========================================================================
+   🛠️ التعديل الجديد المضاف لإصلاح شكل وتداخل نموذج الدخول / التسجيل
+   ========================================================================== */
+.modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin-top: 1rem;
+}
+
+.modal label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: right;
+  color: var(--text-main);
+}
+
+.modal input {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  font-family: inherit;
+  font-size: 0.95rem;
+  direction: ltr; /* لتسهيل كتابة البريد الإلكتروني والباسورد بشكل صحيح */
+  text-align: left;
+  outline: none;
+  width: 100%;
+  background-color: var(--card-bg);
+  color: var(--text-main);
+}
+
+.modal input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.modal form button[type="submit"] {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.modal form button[type="submit"]:hover {
+  background: #e06b00;
+  transform: translateY(-1px);
 }
