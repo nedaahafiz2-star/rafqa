@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rafqa - PowerPoint Games</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="logo-area">
+      <div class="logo-circle">R</div>
+      <span class="site-name">Rafqa</span>
+    </div>
+
+    <div class="header-actions">
+      <button class="icon-btn" id="searchToggle" aria-label="Search">
+        🔍
+      </button>
+      <button class="icon-btn" id="cartToggle" aria-label="Cart">
+        🛒 <span class="cart-count" id="cartCount">0</span>
+      </button>
+      
+      <div class="user-menu-container">
+        <button class="login-btn" id="loginToggle">تسجيل الدخول</button>
+        <div id="userDropdown" class="user-dropdown hidden">
+          <a href="#" id="btnMyOrders"><i class="fas fa-shopping-bag"></i> مشترياتي</a>
+          <a href="https://wa.me/966570261205" target="_blank" id="btnSupport"><i class="fas fa-headset"></i> الدعم الفني</a>
+          <hr class="dropdown-divider">
+          <button id="btnLogout" class="dropdown-logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="search-bar hidden" id="searchBar">
+    <input type="text" id="searchInput" placeholder="ابحث عن لعبة..." />
+  </section>
+
+  <section class="hero">
+    <div class="hero-content">
+      <h1>مرحباً بك في Rafqa</h1>
+      <p>عروض تفاعلية لألعاب PowerPoint تجعل التعلم واللعب أكثر متعة.</p>
+      <button class="primary-btn" id="scrollToGames">استكشف الألعاب</button>
+    </div>
+  </section>
+
+  <section class="categories">
+    <h2>التصنيفات الرئيسية</h2>
+    <div class="category-grid">
+      <button class="category-card" data-category="eid">
+        <span class="cat-icon">🌙</span>
+        <span class="cat-name">ألعاب العيد</span>
+      </button>
+      <button class="category-card" data-category="brain">
+        <span class="cat-icon">🧠</span>
+        <span class="cat-name">ألعاب الذكاء</span>
+      </button>
+      <button class="category-card" data-category="summer">
+        <span class="cat-icon">☀️</span>
+        <span class="cat-name">ألعاب الذكاء الاصطناعي</span>
+      </button>
+      <button class="category-card" data-category="edu">
+        <span class="cat-icon">📚</span>
+        <span class="cat-name">ألعاب تعليمية</span>
+      </button>
+    </div>
+  </section>
+
+  <main class="main" id="gamesSection">
+    <div class="main-header">
+      <h2>الألعاب التفاعلية</h2>
+      <span id="gamesCount"></span>
+    </div>
+    <div class="games-grid" id="gamesGrid">
+    </div>
+  </main>
+
+  <div class="modal-overlay hidden" id="gameModal">
+    <div class="modal">
+      <button class="close-modal" data-close="gameModal">✕</button>
+      <div class="modal-body">
+        <img id="modalImage" alt="" />
+        <div class="modal-info">
+          <h3 id="modalTitle"></h3>
+          <p id="modalCategory"></p>
+          <p id="modalDescription"></p>
+          <p class="modal-price" id="modalPrice"></p>
+          <button class="primary-btn" id="modalAddToCart">إضافة إلى السلة</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="cart-panel hidden" id="cartPanel">
+    <div class="cart-header">
+      <h3>سلة المشتريات</h3>
+      <button class="close-modal" data-close="cartPanel">✕</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        الإجمالي: <span id="cartTotal">0.00</span> ر.س
+      </div>
+      <button class="primary-btn" id="checkoutToggle">إتمام الشراء</button>
+    </div>
+  </aside>
+
+  <section class="checkout hidden" id="checkoutSection">
+    <div class="checkout-inner">
+      <h2>إتمام الشراء</h2>
+      <p>سيتم إرسال رابط تحميل الألعاب إلى بريدك بعد الدفع.</p>
+      <p class="checkout-note">
+        * يمكنك لاحقاً ربط هذه الصفحة ببوابة دفع (PayTabs / HyperPay / Stripe).
+      </p>
+      <button class="secondary-btn" id="closeCheckout">إغلاق</button>
+    </div>
+  </section>
+
+  <div class="modal-overlay hidden" id="loginModal">
+    <div class="modal login-modal">
+      <button class="close-modal" data-close="loginModal">✕</button>
+      <h3>تسجيل الدخول</h3>
+      <form id="loginForm">
+        <label>
+          البريد الإلكتروني
+          <input type="email" id="loginEmail" required />
+        </label>
+        <label>
+          كلمة المرور
+          <input type="password" id="loginPassword" required />
+        </label>
+        <button type="submit" class="primary-btn">دخول</button>
+      </form>
+      <button id="googleLogin" class="secondary-btn" style="margin-top:10px;">
+        تسجيل الدخول بواسطة Google
+      </button>
+      <p class="login-note">
+        ليس لديك حساب؟
+        <button id="openRegister" style="background:none;border:none;color:#5b5bd6;cursor:pointer;">
+          إنشاء حساب
+        </button>
+      </p>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="registerModal">
+    <div class="modal login-modal">
+      <button class="close-modal" data-close="registerModal">✕</button>
+      <h3>إنشاء حساب</h3>
+      <form id="registerForm">
+        <label>
+          الاسم
+          <input type="text" id="registerName" required />
+        </label>
+        <label>
+          البريد الإلكتروني
+          <input type="email" id="registerEmail" required />
+        </label>
+        <label>
+          كلمة المرور
+          <input type="password" id="registerPassword" required />
+        </label>
+        <button type="submit" class="primary-btn">إنشاء حساب</button>
+      </form>
+      <p class="login-note">* يتم حفظ حسابك في Firebase (حقيقي).</p>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+
+  <script src="firebase-config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
