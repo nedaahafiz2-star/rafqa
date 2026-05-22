@@ -5,7 +5,7 @@
 }
 
 :root {
-  --bg: #fcfbfa;               /* إضاءة خلفية بيضاء دافئة ومريحة */
+  --bg: #fcfbfa;            /* إضاءة خلفية بيضاء دافئة ومريحة */
   --card-bg: #ffffff;
   --primary: #ff7a00;         /* الهوية البرتقالية الدافئة لـ Rafqa */
   --primary-soft: #fff2e6;    /* خلفيات برتقالية ناعمة للعناصر */
@@ -181,26 +181,44 @@ body {
   border-color: var(--primary);
 }
 
-/* --- 🎮 تنسيق البانر الترحيبي الجديد والمطور 🎮 --- */
+/* ==========================================================================
+   🎮 تنسيق البانر الترحيبي المحمي والمطور كلياً من المشاكل البصرية
+   ========================================================================== */
 .welcome-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, #FFFDF9 0%, #FFF5EF 100%); /* خلفية دافئة متناسقة مع الهوية البرتقالية */
+  background: linear-gradient(135deg, #FFFDF9 0%, #FFF5EF 100%);
   border-radius: 24px;
-  padding: 60px;
+  padding: 40px 50px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(255, 130, 58, 0.05);
-  margin-bottom: 40px;
+  box-shadow: 0 10px 30px rgba(255, 122, 0, 0.05);
+  margin: 20px 1.25rem 40px 1.25rem; /* حواف داخلية متجانسة */
 }
 
 .banner-content {
+  flex: 1;
   max-width: 55%;
   z-index: 2;
+  text-align: right;
 }
 
-/* صندوق الألعاب التفاعلي */
+.banner-content h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 12px 0;
+}
+
+.banner-content p {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  margin: 0 0 25px 0;
+  line-height: 1.6;
+}
+
+/* صندوق احتواء الألعاب التفاعلي المصلح برمجياً */
 .banner-gaming-assets {
   position: relative;
   width: 40%;
@@ -209,37 +227,39 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 1;
+  flex-shrink: 0; /* يمنع انضغاط أو صغر حجم قسم الأيقونات */
 }
 
-/* التنسيق العام للأيقونات العائمة */
+/* التنسيق العام للأيقونات العائمة المصلحة للـ RTL */
 .game-asset {
   position: absolute;
-  color: #ff7a00; /* تم ربطه بمتغير الهوية البرتقالية الأساسي */
+  color: var(--primary); 
   opacity: 0.85;
-  filter: drop-shadow(0 4px 10px rgba(255, 122, 0, 0.2));
+  filter: drop-shadow(0 4px 12px rgba(255, 122, 0, 0.18));
   animation: floatAnimation 4s ease-in-out infinite;
 }
 
-/* توزيع الأيقونات بأحجام وأماكن مختلفة لتصميم متوازن */
-.icon-gamepad { font-size: 80px; top: 20%; left: 30%; animation-delay: 0s; color: var(--primary); }
-.icon-puzzle  { font-size: 45px; top: 10%; right: 15%; animation-delay: 1s; color: var(--accent); }
-.icon-dice    { font-size: 50px; bottom: 15%; left: 15%; animation-delay: 1.5s; color: #ffa166; }
-.icon-trophy  { font-size: 55px; bottom: 10%; right: 25%; animation-delay: 0.5s; color: var(--primary); }
-.icon-star    { font-size: 30px; top: 60%; left: 50%; animation-delay: 2s; color: #ffdcc7; }
+/* إعادة توزيع الأماكن باستخدام اتجاهات RTL الصحيحة بدقة وبدون تداخل خارج الصندوق */
+.icon-gamepad { font-size: 70px; top: 15%; right: 25%; animation-delay: 0s; }
+.icon-puzzle  { font-size: 42px; top: 10%; left: 10%; animation-delay: 1s; color: var(--accent); }
+.icon-dice    { font-size: 45px; bottom: 15%; right: 10%; animation-delay: 1.5s; color: #ffa166; }
+.icon-trophy  { font-size: 48px; bottom: 10%; left: 20%; animation-delay: 0.5s; }
+.icon-star    { font-size: 25px; top: 55%; right: 45%; animation-delay: 2s; color: #ffdcc7; }
 
-/* تأثير الحركة العائمة السلسة (Floating Effect) */
+/* تأثير الحركة العائمة السلسة فائقة الاستقرار */
 @keyframes floatAnimation {
   0% {
     transform: translateY(0px) rotate(0deg);
   }
   50% {
-    transform: translateY(-15px) rotate(8deg);
+    transform: translateY(-12px) rotate(6deg);
   }
   100% {
     transform: translateY(0px) rotate(0deg);
   }
 }
 
+/* Buttons & Controls */
 .primary-btn,
 .secondary-btn,
 .banner-btn {
@@ -315,7 +335,10 @@ body {
 }
 
 .cat-icon {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cat-name {
@@ -628,7 +651,9 @@ body {
   display: none !important;
 }
 
-/* Media Queries */
+/* ==========================================================================
+   📱 شاشات الـ Media Queries المستقرة والمحسنة للهواتف
+   ========================================================================== */
 @media (min-width: 768px) {
   .category-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -648,23 +673,30 @@ body {
   }
 }
 
-/* لضمان تناسق تصميم البانر وال ألعاب على الشاشات الصغيرة */
 @media (max-width: 768px) {
   .welcome-banner {
     flex-direction: column;
     text-align: center;
-    padding: 40px 20px;
+    padding: 35px 20px;
+    margin: 15px 1rem 30px 1rem;
+    gap: 25px;
   }
   .banner-content {
     max-width: 100%;
-    margin-bottom: 30px;
+    text-align: center;
+    order: 1;
   }
   .banner-gaming-assets {
     width: 100%;
-    height: 150px;
+    height: 160px;
+    order: 2;
   }
-  .icon-gamepad { font-size: 55px; }
-  .icon-puzzle, .icon-dice, .icon-trophy { font-size: 30px; }
+  /* أحجام متناسقة للأجهزة الذكية تمنع الخروج تماماً */
+  .icon-gamepad { font-size: 52px; top: 10%; right: 40%; }
+  .icon-puzzle  { font-size: 32px; top: 5%; left: 15%; }
+  .icon-dice    { font-size: 32px; bottom: 10%; right: 15%; }
+  .icon-trophy  { font-size: 36px; bottom: 5%; left: 25%; }
+  .icon-star    { font-size: 20px; top: 45%; right: 50%; }
 }
 
 /* ==========================================================================
