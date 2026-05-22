@@ -5,7 +5,7 @@
 }
 
 :root {
-  --bg: #fcfbfa;            /* إضاءة خلفية بيضاء دافئة ومريحة */
+  --bg: #fcfbfa;             /* إضاءة خلفية بيضاء دافئة ومريحة */
   --card-bg: #ffffff;
   --primary: #ff7a00;         /* الهوية البرتقالية الدافئة لـ Rafqa */
   --primary-soft: #fff2e6;    /* خلفيات برتقالية ناعمة للعناصر */
@@ -27,7 +27,9 @@ body {
   direction: rtl;
 }
 
-/* Header */
+/* ==========================================================================
+   ✨ تعديل وتنسيق الـ Header ليتناسب مع الشعار الدائري الجديد
+   ========================================================================== */
 .header {
   position: sticky;
   top: 0;
@@ -40,28 +42,42 @@ body {
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
 }
+
+/* حاوية الشعار واسم الموقع لترتيب العناصر أفقياً */
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* مسافة مريحة بين الدائرة واسم المتجر */
+}
+
 .logo-circle {
-  width: 45px;          /* زدنا الحجم قليلاً ليتناسب مع شعاركِ الضخم */
+  width: 45px;          /* حجم مثالي ومتناسق */
   height: 45px;
   border-radius: 50%;
   background: var(--primary); /* اللون البرتقالي المحيط */
   display: flex;
   align-items: center;
   justify-content: center;
-  
-  /* 🪄 السطر السحري المصلح 🪄 */
-  overflow: hidden;     /* هذا السطر يقص أي جزء من الشعار يخرج عن الدائرة! */
-  
-  flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(255, 122, 0, 0.2); /* لمسة جمالية */
+  overflow: hidden;     /* 🪄 السطر السحري الذي يقص الشعار تلقائياً على شكل دائرة ويمنع تمدده */
+  flex-shrink: 0;       /* يمنع انضغاط الدائرة نهائياً */
+  box-shadow: 0 4px 10px rgba(255, 122, 0, 0.2); /* لمسة جمالية دافئة */
 }
 
-/* للتأكد من أن الصورة لا تتمدد، ضعي هذا السطر أسفله مباشرة */
+/* تنسيق الصورة داخل الدائرة برمجياً */
 .logo-circle img {
   width: 100%;
   height: 100%;
-  object-fit: cover;    /* يضمن توسط الشعار واحتوائه بالكامل */
+  object-fit: cover;    /* يضمن توسط الشعار واحتوائه بالكامل دون أي تشوه */
+  display: block;
 }
+
+.site-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* باقي التنسيقات المستقرة للموقع */
 .header-actions {
   display: flex;
   align-items: center;
@@ -190,7 +206,7 @@ body {
   position: relative;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(255, 122, 0, 0.05);
-  margin: 20px 1.25rem 40px 1.25rem; /* حواف داخلية متجانسة */
+  margin: 20px 1.25rem 40px 1.25rem;
 }
 
 .banner-content {
@@ -214,7 +230,6 @@ body {
   line-height: 1.6;
 }
 
-/* صندوق احتواء الألعاب التفاعلي المصلح برمجياً */
 .banner-gaming-assets {
   position: relative;
   width: 40%;
@@ -223,10 +238,9 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 1;
-  flex-shrink: 0; /* يمنع انضغاط أو صغر حجم قسم الأيقونات */
+  flex-shrink: 0;
 }
 
-/* التنسيق العام للأيقونات العائمة المصلحة للـ RTL */
 .game-asset {
   position: absolute;
   color: var(--primary); 
@@ -235,24 +249,16 @@ body {
   animation: floatAnimation 4s ease-in-out infinite;
 }
 
-/* إعادة توزيع الأماكن باستخدام اتجاهات RTL الصحيحة بدقة وبدون تداخل خارج الصندوق */
 .icon-gamepad { font-size: 70px; top: 15%; right: 25%; animation-delay: 0s; }
 .icon-puzzle  { font-size: 42px; top: 10%; left: 10%; animation-delay: 1s; color: var(--accent); }
 .icon-dice    { font-size: 45px; bottom: 15%; right: 10%; animation-delay: 1.5s; color: #ffa166; }
 .icon-trophy  { font-size: 48px; bottom: 10%; left: 20%; animation-delay: 0.5s; }
 .icon-star    { font-size: 25px; top: 55%; right: 45%; animation-delay: 2s; color: #ffdcc7; }
 
-/* تأثير الحركة العائمة السلسة فائقة الاستقرار */
 @keyframes floatAnimation {
-  0% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-12px) rotate(6deg);
-  }
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(6deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
 }
 
 /* Buttons & Controls */
