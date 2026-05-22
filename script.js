@@ -284,7 +284,6 @@ if (checkoutToggle) {
     }
 
     // 3. التوجيه المباشر إلى رابط الدفع التجريبي الذي قمتِ بإنشائه
-    alert("سيتم توجيهك الآن إلى صفحة الدفع الآمنة لإتمام الشراء.. 🎉");
     window.location.href = "https://buy.stripe.com/test_4gMdR229ve1TcgDbuZcfK00";
   });
 }
