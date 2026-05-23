@@ -26,19 +26,22 @@ const closeCheckoutBtn = document.getElementById("closeCheckout");
 const loginToggle = document.getElementById("loginToggle");
 const loginModal = document.getElementById("loginModal");
 const loginForm = document.getElementById("loginForm");
-const loginEmail = document.getElementById("loginEmail");
-const loginPassword = document.getElementById("loginPassword");
+
+// العناصر الجديدة والمحدثة لتسجيل الدخول برقم الجوال
+const loginPhone = document.getElementById("loginPhone");
+const loginOtpLabel = document.getElementById("loginOtpLabel");
+const loginOtp = document.getElementById("loginOtp");
+const loginErrorMsg = document.getElementById("loginErrorMsg");
+const authSubmitBtn = document.getElementById("authSubmitBtn");
 
 const registerModal = document.getElementById("registerModal");
 const openRegister = document.getElementById("openRegister");
 const registerForm = document.getElementById("registerForm");
 const registerName = document.getElementById("registerName");
-const registerEmail = document.getElementById("registerEmail");
-const registerPassword = document.getElementById("registerPassword");
+const registerPhone = document.getElementById("registerPhone");
+const registerErrorMsg = document.getElementById("registerErrorMsg");
 
-const googleLoginBtn = document.getElementById("googleLogin");
-
-// عناصر القائمة المنسدلة الجديدة
+// عناصر القائمة المنسدلة
 const userDropdown = document.getElementById("userDropdown");
 const btnLogout = document.getElementById("btnLogout");
 const btnMyOrders = document.getElementById("btnMyOrders");
@@ -49,6 +52,11 @@ let filteredGames = [];
 let selectedGame = null;
 let cart = [];
 let currentUser = null;
+
+// تعقب حالة نموذج تسجيل الدخول (إرسال الكود أولاً ثم التحقق منه)
+let loginStep = "send_code"; 
+// مصفوفة وهمية للأرقام المسجلة مسبقاً (سيتم الاعتماد على قاعدة بيانات Firebase لاحقاً)
+let mockRegisteredPhones = ["0500000000", "0555555555"]; 
 
 // --- Helpers ---
 function mapCategory(cat) {
@@ -81,11 +89,21 @@ function closeModal(el) {
 function updateHeaderUser(user) {
   if (!loginToggle) return;
   if (user) {
-    loginToggle.textContent = user.displayName || user.email.split('@')[0] || "حسابي";
+    loginToggle.textContent = user.displayName || user.phoneNumber || "حسابي";
   } else {
     loginToggle.textContent = "تسجيل الدخول";
     if (userDropdown) userDropdown.classList.add("hidden");
   }
+}
+
+// إعادة تعيين نموذج تسجيل الدخول لحالته الأولى عند الإغلاق أو التبديل
+function resetLoginForm() {
+  loginStep = "send_code";
+  if (loginPhone) { loginPhone.value = ""; loginPhone.disabled = false; }
+  if (loginOtp) loginOtp.value = "";
+  if (loginOtpLabel) loginOtpLabel.classList.add("hidden");
+  if (loginErrorMsg) loginErrorMsg.classList.add("hidden");
+  if (authSubmitBtn) authSubmitBtn.textContent = "إرسال كود التحقق";
 }
 
 // --- Render functions ---
@@ -256,8 +274,8 @@ document.querySelectorAll(".close-modal").forEach((btn) => {
     const target = btn.dataset.close;
     if (target === "gameModal") closeModal(gameModal);
     if (target === "cartPanel") closeModal(cartPanel);
-    if (target === "loginModal") closeModal(loginModal);
-    if (target === "registerModal") closeModal(registerModal);
+    if (target === "loginModal") { closeModal(loginModal); resetLoginForm(); }
+    if (target === "registerModal") { closeModal(registerModal); if (registerErrorMsg) registerErrorMsg.classList.add("hidden"); }
   });
 });
 
@@ -267,23 +285,34 @@ if (cartToggle && cartPanel) {
   });
 }
 
-// 🛒 --- ربط زر إتمام الشراء ببوابة دفع Stripe ---
+// 🛒 --- التعديل رقم 2: منع الشراء بدون حساب وإظهار تنبيه ملون بالأحمر في السلة ---
 if (checkoutToggle) {
   checkoutToggle.addEventListener("click", () => {
-    // 1. التحقق أولاً من تسجيل الدخول لحفظ بيانات الطلب وحماية الموقع
+    // إزالة أي تنبيه أحمر قديم داخل السلة لكي لا يتكرر
+    const oldNotice = document.getElementById("cartAuthNotice");
+    if (oldNotice) oldNotice.remove();
+
     if (!currentUser) {
-      alert("الرجاء تسجيل الدخول أولاً لإتمام الطلب.");
+      // بناء عنصر التنبيه الأحمر برمجياً ليوضع فوق الزر مباشرة
+      const notice = document.createElement("div");
+      notice.id = "cartAuthNotice";
+      notice.className = "error-text";
+      notice.style.marginBottom = "12px";
+      notice.innerHTML = `<i class="fas fa-exclamation-circle"></i> يرجى تسجيل الدخول أولاً لإتمام عملية الشراء!`;
+      
+      checkoutToggle.before(notice);
+      
+      // فتح نافذة تسجيل الدخول مباشرة لمساعدته
       openModal(loginModal);
       return;
     }
 
-    // 2. التحقق من أن السلة تحتوي على منتجات
     if (cart.length === 0) {
       alert("سلتك فارغة حالياً، يرجى إضافة لعبة أولاً.");
       return;
     }
 
-    // 3. التوجيه المباشر إلى رابط الدفع التجريبي الذي قمتِ بإنشائه
+    // التوجيه إلى رابط الدفع في Stripe بعد تخطي شروط الأمان
     window.location.href = "https://buy.stripe.com/test_4gMdR229ve1TcgDbuZcfK00";
   });
 }
@@ -294,29 +323,22 @@ if (closeCheckoutBtn) {
   });
 }
 
-// تعديل زر تسجيل الدخول للتحكم بالقائمة المنسدلة الذكية
+// التحكم بالقائمة المنسدلة لحساب المستخدم
 if (loginToggle) {
   loginToggle.addEventListener("click", (e) => {
-    e.stopPropagation(); // منع غلق القائمة فورياً عند الضغط
-    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
-    if (!currentAuth) return;
-
+    e.stopPropagation(); 
     if (currentUser) {
-      // إذا مسجل دخول، اظهر أو اخفِ القائمة المنسدلة
       if (userDropdown) userDropdown.classList.toggle("hidden");
     } else {
-      // إذا غير مسجل، افتح نافذة التسجيل
       openModal(loginModal);
     }
   });
 }
 
-// إغلاق القائمة المنسدلة إذا ضغط المستخدم بأي مكان خارجها بالصفحة
 document.addEventListener("click", () => {
   if (userDropdown) userDropdown.classList.add("hidden");
 });
 
-// تفعيل زر تسجيل الخروج من داخل القائمة
 if (btnLogout) {
   btnLogout.addEventListener("click", () => {
     const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
@@ -325,13 +347,15 @@ if (btnLogout) {
     if (confirm("هل تريد تسجيل الخروج؟")) {
       currentAuth.signOut().then(() => {
         if (userDropdown) userDropdown.classList.add("hidden");
+        // إزالة التنبيهات عند خروج المستخدم
+        const oldNotice = document.getElementById("cartAuthNotice");
+        if (oldNotice) oldNotice.remove();
         alert("تم تسجيل الخروج بنجاح.");
       });
     }
   });
 }
 
-// تفعيل زر مشترياتي
 if (btnMyOrders) {
   btnMyOrders.addEventListener("click", (e) => {
     e.preventDefault();
@@ -339,21 +363,62 @@ if (btnMyOrders) {
   });
 }
 
+// 🔐 --- التعديل رقم 1 و 3: نموذج الدخول المطور والتحقق من الأخطاء برقم الجوال ---
 if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const email = loginEmail.value.trim();
-    const pass = loginPassword.value;
-    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
+    if (loginErrorMsg) loginErrorMsg.classList.add("hidden"); // تصفير الأخطاء السابقة
 
-    if (!currentAuth) return;
+    const phoneVal = loginPhone.value.trim();
 
-    try {
-      await currentAuth.signInWithEmailAndPassword(email, pass);
-      closeModal(loginModal);
-      alert("مرحباً بعودتكِ مجدداً! 🎉");
-    } catch (err) {
-      alert("خطأ في تسجيل الدخول: " + err.message);
+    // المرحلة الأولى: التحقق من رقم الجوال وإرسال كود التحقق
+    if (loginStep === "send_code") {
+      // فحص هل الرقم مسجل لدينا أم لا؟
+      if (!mockRegisteredPhones.includes(phoneVal)) {
+        if (loginErrorMsg) {
+          loginErrorMsg.textContent = "❌ رقم الجوال هذا غير مسجل لدينا، يرجى إنشاء حساب جديد أولاً.";
+          loginErrorMsg.classList.remove("hidden");
+        }
+        return;
+      }
+
+      // محاكاة إرسال الرسالة النصية (SMS) بنجاح
+      alert("تم إرسال كود التحقق بنجاح إلى جوالك! (الكود التجريبي للتجربة هو: 1234)");
+      
+      // فتح حقل كود التحقق وتعديل الزر
+      if (loginOtpLabel) loginOtpLabel.classList.remove("hidden");
+      if (loginPhone) loginPhone.disabled = true;
+      if (authSubmitBtn) authSubmitBtn.textContent = "تأكيد كود التحقق";
+      loginStep = "verify_code";
+    } 
+    // المرحلة الثانية: مطابقة كود التحقق المدخل من العميل
+    else if (loginStep === "verify_code") {
+      const otpVal = loginOtp.value.trim();
+
+      if (otpVal === "1234") { // كود التحقق التجريبي المستقر
+        // محاكاة مستخدم مسجل عبر الجوال
+        currentUser = {
+          displayName: "مشتري رافق",
+          phoneNumber: phoneVal,
+          uid: "mock_user_" + Date.now()
+        };
+        
+        updateHeaderUser(currentUser);
+        closeModal(loginModal);
+        resetLoginForm();
+        
+        // حذف رسالة التنبيه الحمراء من السلة فور تسجيل الدخول بنجاح
+        const oldNotice = document.getElementById("cartAuthNotice");
+        if (oldNotice) oldNotice.remove();
+        
+        alert("مرحباً بعودتكِ مجدداً إلى Rafqa! 🎉");
+      } else {
+        // إذا الكود المدخل غير صحيح
+        if (loginErrorMsg) {
+          loginErrorMsg.textContent = "❌ كود التحقق غير صحيح، يرجى إعادة التأكد والمحاولة مرة أخرى.";
+          loginErrorMsg.classList.remove("hidden");
+        }
+      }
     }
   });
 }
@@ -361,58 +426,49 @@ if (loginForm) {
 if (openRegister) {
   openRegister.addEventListener("click", () => {
     closeModal(loginModal);
+    resetLoginForm();
     openModal(registerModal);
   });
 }
 
+// 🔐 --- نموذج إنشاء الحساب برقم الجوال والاسم وحماية الأخطاء بالأحمر ---
 if (registerForm) {
   registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (registerErrorMsg) registerErrorMsg.classList.add("hidden");
+
     const name = registerName.value.trim();
-    const email = registerEmail.value.trim();
-    const pass = registerPassword.value;
-    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
+    const phone = registerPhone.value.trim();
 
-    if (!currentAuth) return;
-
-    if (pass.length < 6) {
-      alert("عذراً، يجب أن تكون كلمة المرور من 6 خانات أو أكثر لحماية حسابك.");
+    // فحص بسيط لسلامة رقم الجوال المدخل
+    if (phone.length < 10) {
+      if (registerErrorMsg) {
+        registerErrorMsg.textContent = "❌ يرجى إدخال رقم جوال صحيح مكون من 10 خانات (مثل: 05xxxxxxxx).";
+        registerErrorMsg.classList.remove("hidden");
+      }
       return;
     }
 
-    try {
-      const cred = await currentAuth.createUserWithEmailAndPassword(email, pass);
-      await cred.user.updateProfile({ displayName: name });
-      
-      try {
-        await cred.user.sendEmailVerification();
-      } catch (verErr) {
-        console.warn("تعذر إرسال بريد التحقق:", verErr);
-      }
-
-      alert("🎉 تم إنشاء حسابكِ بنجاح أهلاً بكِ في Rafqa!");
-      updateHeaderUser(cred.user);
-      closeModal(registerModal);
-    } catch (err) {
-      alert("حدث خطأ أثناء إنشاء الحساب: " + err.message);
+    // إضافة الرقم الجديد للمصفوفة لكي يقبله تسجيل الدخول لاحقاً
+    if (!mockRegisteredPhones.includes(phone)) {
+      mockRegisteredPhones.push(phone);
     }
-  });
-}
 
-if (googleLoginBtn) {
-  googleLoginBtn.addEventListener("click", async () => {
-    if (typeof firebase === "undefined") return;
-    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
-    if (!currentAuth) return;
+    // محاكاة إنشاء وتفعيل الحساب فوراً بالاسم ورقم الجوال
+    currentUser = {
+      displayName: name,
+      phoneNumber: phone,
+      uid: "mock_user_" + Date.now()
+    };
 
-    const provider = new firebase.auth.GoogleAuthProvider();
-    try {
-      await currentAuth.signInWithPopup(provider);
-      closeModal(loginModal);
-      alert("تم تسجيل الدخول عبر Google بنجاح! 🚀");
-    } catch (err) {
-      alert("فشل تسجيل الدخول بـ قوقل: " + err.message);
-    }
+    updateHeaderUser(currentUser);
+    closeModal(registerModal);
+    if (registerForm) registerForm.reset();
+    
+    const oldNotice = document.getElementById("cartAuthNotice");
+    if (oldNotice) oldNotice.remove();
+
+    alert(`🎉 أهلاً بكِ يا ${name}! تم إنشاء حسابكِ بنجاح في متجر Rafqa.`);
   });
 }
 
@@ -430,12 +486,13 @@ function initializeAppLogic() {
 
   if (currentAuth) {
     currentAuth.onAuthStateChanged((user) => {
-      currentUser = user;
-      updateHeaderUser(user);
+      if (user) {
+        currentUser = user;
+        updateHeaderUser(user);
+      }
     });
   }
   
-  // حماية الاستدعاء داخل try-catch للتأكد أن المتصفح يكمل عمله ولا يعلق التصميم
   try {
     loadGames();
   } catch (error) {
@@ -444,6 +501,7 @@ function initializeAppLogic() {
 
   renderCart();
 }
+
 window.addEventListener("DOMContentLoaded", () => {
   setTimeout(initializeAppLogic, 400);
 });
