@@ -27,19 +27,22 @@ const loginToggle = document.getElementById("loginToggle");
 const loginModal = document.getElementById("loginModal");
 const loginForm = document.getElementById("loginForm");
 
-// العناصر الجديدة والمحدثة لتسجيل الدخول برقم الجوال
-const loginPhone = document.getElementById("loginPhone");
-const loginOtpLabel = document.getElementById("loginOtpLabel");
-const loginOtp = document.getElementById("loginOtp");
+// العناصر الجديدة والمحدثة للنظام الشامل (البريد، كلمة المرور، الجوال)
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
 const loginErrorMsg = document.getElementById("loginErrorMsg");
-const authSubmitBtn = document.getElementById("authSubmitBtn");
 
 const registerModal = document.getElementById("registerModal");
 const openRegister = document.getElementById("openRegister");
 const registerForm = document.getElementById("registerForm");
 const registerName = document.getElementById("registerName");
+const registerEmail = document.getElementById("registerEmail");
 const registerPhone = document.getElementById("registerPhone");
+const registerPassword = document.getElementById("registerPassword");
 const registerErrorMsg = document.getElementById("registerErrorMsg");
+
+const openLogin = document.getElementById("openLogin");
+const googleLogin = document.getElementById("googleLogin");
 
 // عناصر القائمة المنسدلة
 const userDropdown = document.getElementById("userDropdown");
@@ -52,11 +55,6 @@ let filteredGames = [];
 let selectedGame = null;
 let cart = [];
 let currentUser = null;
-
-// تعقب حالة نموذج تسجيل الدخول (إرسال الكود أولاً ثم التحقق منه)
-let loginStep = "send_code"; 
-// مصفوفة وهمية للأرقام المسجلة مسبقاً (سيتم الاعتماد على قاعدة بيانات Firebase لاحقاً)
-let mockRegisteredPhones = ["0500000000", "0555555555"]; 
 
 // --- Helpers ---
 function mapCategory(cat) {
@@ -89,21 +87,19 @@ function closeModal(el) {
 function updateHeaderUser(user) {
   if (!loginToggle) return;
   if (user) {
-    loginToggle.textContent = user.displayName || user.phoneNumber || "حسابي";
+    loginToggle.textContent = user.displayName || "حسابي";
   } else {
     loginToggle.textContent = "تسجيل الدخول";
     if (userDropdown) userDropdown.classList.add("hidden");
   }
 }
 
-// إعادة تعيين نموذج تسجيل الدخول لحالته الأولى عند الإغلاق أو التبديل
-function resetLoginForm() {
-  loginStep = "send_code";
-  if (loginPhone) { loginPhone.value = ""; loginPhone.disabled = false; }
-  if (loginOtp) loginOtp.value = "";
-  if (loginOtpLabel) loginOtpLabel.classList.add("hidden");
+// إعادة تعيين النوافذ عند التبديل أو الإغلاق
+function resetAuthForms() {
+  if (loginForm) loginForm.reset();
+  if (registerForm) registerForm.reset();
   if (loginErrorMsg) loginErrorMsg.classList.add("hidden");
-  if (authSubmitBtn) authSubmitBtn.textContent = "إرسال كود التحقق";
+  if (registerErrorMsg) registerErrorMsg.classList.add("hidden");
 }
 
 // --- Render functions ---
@@ -177,7 +173,7 @@ function renderCart() {
   if (cartCountEl) cartCountEl.textContent = cart.length;
 }
 
-// --- Firebase ---
+// --- Firebase Data Fetching ---
 async function loadGames() {
   const currentRtdb = window.rtdb || (typeof rtdb !== "undefined" ? rtdb : null);
   if (!currentRtdb) return;
@@ -274,8 +270,8 @@ document.querySelectorAll(".close-modal").forEach((btn) => {
     const target = btn.dataset.close;
     if (target === "gameModal") closeModal(gameModal);
     if (target === "cartPanel") closeModal(cartPanel);
-    if (target === "loginModal") { closeModal(loginModal); resetLoginForm(); }
-    if (target === "registerModal") { closeModal(registerModal); if (registerErrorMsg) registerErrorMsg.classList.add("hidden"); }
+    if (target === "loginModal") { closeModal(loginModal); resetAuthForms(); }
+    if (target === "registerModal") { closeModal(registerModal); resetAuthForms(); }
   });
 });
 
@@ -285,24 +281,20 @@ if (cartToggle && cartPanel) {
   });
 }
 
-// 🛒 --- التعديل رقم 2: منع الشراء بدون حساب وإظهار تنبيه ملون بالأحمر في السلة ---
+// 🛒 منع الشراء بدون حساب وإظهار تنبيه ملون بالأحمر في السلة
 if (checkoutToggle) {
   checkoutToggle.addEventListener("click", () => {
-    // إزالة أي تنبيه أحمر قديم داخل السلة لكي لا يتكرر
     const oldNotice = document.getElementById("cartAuthNotice");
     if (oldNotice) oldNotice.remove();
 
     if (!currentUser) {
-      // بناء عنصر التنبيه الأحمر برمجياً ليوضع فوق الزر مباشرة
       const notice = document.createElement("div");
       notice.id = "cartAuthNotice";
       notice.className = "error-text";
       notice.style.marginBottom = "12px";
-      notice.innerHTML = `<i class="fas fa-exclamation-circle"></i> يرجى تسجيل الدخول أولاً لإتمام عملية الشراء!`;
+      notice.innerHTML = `⚠️ يرجى تسجيل الدخول أولاً لإتمام عملية الشراء!`;
       
       checkoutToggle.before(notice);
-      
-      // فتح نافذة تسجيل الدخول مباشرة لمساعدته
       openModal(loginModal);
       return;
     }
@@ -339,6 +331,7 @@ document.addEventListener("click", () => {
   if (userDropdown) userDropdown.classList.add("hidden");
 });
 
+// الخروج الفعلي عبر Firebase
 if (btnLogout) {
   btnLogout.addEventListener("click", () => {
     const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
@@ -347,10 +340,11 @@ if (btnLogout) {
     if (confirm("هل تريد تسجيل الخروج؟")) {
       currentAuth.signOut().then(() => {
         if (userDropdown) userDropdown.classList.add("hidden");
-        // إزالة التنبيهات عند خروج المستخدم
         const oldNotice = document.getElementById("cartAuthNotice");
         if (oldNotice) oldNotice.remove();
         alert("تم تسجيل الخروج بنجاح.");
+      }).catch((error) => {
+        console.error("خطأ أثناء تسجيل الخروج:", error);
       });
     }
   });
@@ -363,85 +357,67 @@ if (btnMyOrders) {
   });
 }
 
-// 🔐 --- التعديل رقم 1 و 3: نموذج الدخول المطور والتحقق من الأخطاء برقم الجوال ---
+// 🔐 --- ربط الـ Authentication الفعلي بـ Firebase ---
+
+// 1. تسجيل الدخول (Email + Password)
 if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (loginErrorMsg) loginErrorMsg.classList.add("hidden"); // تصفير الأخطاء السابقة
+    if (loginErrorMsg) loginErrorMsg.classList.add("hidden");
 
-    const phoneVal = loginPhone.value.trim();
+    const emailVal = loginEmail.value.trim();
+    const passwordVal = loginPassword.value;
+    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
 
-    // المرحلة الأولى: التحقق من رقم الجوال وإرسال كود التحقق
-    if (loginStep === "send_code") {
-      // فحص هل الرقم مسجل لدينا أم لا؟
-      if (!mockRegisteredPhones.includes(phoneVal)) {
-        if (loginErrorMsg) {
-          loginErrorMsg.textContent = "❌ رقم الجوال هذا غير مسجل لدينا، يرجى إنشاء حساب جديد أولاً.";
-          loginErrorMsg.classList.remove("hidden");
-        }
-        return;
-      }
+    if (!currentAuth) {
+      console.error("Firebase Auth service is not available.");
+      return;
+    }
 
-      // محاكاة إرسال الرسالة النصية (SMS) بنجاح
-      alert("تم إرسال كود التحقق بنجاح إلى جوالك! (الكود التجريبي للتجربة هو: 1234)");
+    try {
+      // استخدام دالة Firebase الرسمية الممررة في نطاق الـ window أو الملف الشخصي
+      await currentAuth.signInWithEmailAndPassword(emailVal, passwordVal);
       
-      // فتح حقل كود التحقق وتعديل الزر
-      if (loginOtpLabel) loginOtpLabel.classList.remove("hidden");
-      if (loginPhone) loginPhone.disabled = true;
-      if (authSubmitBtn) authSubmitBtn.textContent = "تأكيد كود التحقق";
-      loginStep = "verify_code";
-    } 
-    // المرحلة الثانية: مطابقة كود التحقق المدخل من العميل
-    else if (loginStep === "verify_code") {
-      const otpVal = loginOtp.value.trim();
-
-      if (otpVal === "1234") { // كود التحقق التجريبي المستقر
-        // محاكاة مستخدم مسجل عبر الجوال
-        currentUser = {
-          displayName: "مشتري رافق",
-          phoneNumber: phoneVal,
-          uid: "mock_user_" + Date.now()
-        };
-        
-        updateHeaderUser(currentUser);
-        closeModal(loginModal);
-        resetLoginForm();
-        
-        // حذف رسالة التنبيه الحمراء من السلة فور تسجيل الدخول بنجاح
-        const oldNotice = document.getElementById("cartAuthNotice");
-        if (oldNotice) oldNotice.remove();
-        
-        alert("مرحباً بعودتكِ مجدداً إلى Rafqa! 🎉");
-      } else {
-        // إذا الكود المدخل غير صحيح
-        if (loginErrorMsg) {
-          loginErrorMsg.textContent = "❌ كود التحقق غير صحيح، يرجى إعادة التأكد والمحاولة مرة أخرى.";
-          loginErrorMsg.classList.remove("hidden");
+      closeModal(loginModal);
+      resetAuthForms();
+      
+      const oldNotice = document.getElementById("cartAuthNotice");
+      if (oldNotice) oldNotice.remove();
+      
+      alert("مرحباً بعودتكِ مجدداً إلى Rafqa! 🎉");
+    } catch (error) {
+      console.error("خطأ تسجيل الدخول:", error);
+      if (loginErrorMsg) {
+        loginErrorMsg.classList.remove("hidden");
+        if (error.code === "auth/wrong-password" || error.code === "auth/user-not-found" || error.code === "auth/invalid-credential") {
+          loginErrorMsg.textContent = "❌ البريد الإلكتروني أو كلمة المرور التي أدخلتيها غير صحيحة.";
+        } else if (error.code === "auth/invalid-email") {
+          loginErrorMsg.textContent = "❌ صيغة البريد الإلكتروني غير صحيحة.";
+        } else {
+          loginErrorMsg.textContent = "❌ تعذر تسجيل الدخول، يرجى مراجعة البيانات والمحاولة مرة أخرى.";
         }
       }
     }
   });
 }
 
-if (openRegister) {
-  openRegister.addEventListener("click", () => {
-    closeModal(loginModal);
-    resetLoginForm();
-    openModal(registerModal);
-  });
-}
-
-// 🔐 --- نموذج إنشاء الحساب برقم الجوال والاسم وحماية الأخطاء بالأحمر ---
+// 2. إنشاء حساب جديد شامل (الاسم، البريد، الجوال، كلمة المرور)
 if (registerForm) {
   registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (registerErrorMsg) registerErrorMsg.classList.add("hidden");
 
-    const name = registerName.value.trim();
-    const phone = registerPhone.value.trim();
+    const nameVal = registerName.value.trim();
+    const emailVal = registerEmail.value.trim();
+    const phoneVal = registerPhone.value.trim();
+    const passwordVal = registerPassword.value;
+    
+    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
 
-    // فحص بسيط لسلامة رقم الجوال المدخل
-    if (phone.length < 10) {
+    if (!currentAuth) return;
+
+    // فحص سلامة طول رقم الجوال بشكل سريع
+    if (phoneVal.length < 10) {
       if (registerErrorMsg) {
         registerErrorMsg.textContent = "❌ يرجى إدخال رقم جوال صحيح مكون من 10 خانات (مثل: 05xxxxxxxx).";
         registerErrorMsg.classList.remove("hidden");
@@ -449,26 +425,64 @@ if (registerForm) {
       return;
     }
 
-    // إضافة الرقم الجديد للمصفوفة لكي يقبله تسجيل الدخول لاحقاً
-    if (!mockRegisteredPhones.includes(phone)) {
-      mockRegisteredPhones.push(phone);
+    try {
+      // أ- إنشاء الحساب بالبريد وكلمة المرور
+      const userCredential = await currentAuth.createUserWithEmailAndPassword(emailVal, passwordVal);
+      const user = userCredential.user;
+
+      // ب- دمج وتحديث ملف المستخدم لحفظ الاسم ورقم الجوال بذكاء داخل الـ Profile
+      if (user.updateProfile) {
+        await user.updateProfile({
+          displayName: nameVal,
+          photoURL: phoneVal // نستخدم حقل photoURL لتخزين رقم الجوال لتسهيل جلب البيانات دون قواعد بيانات معقدة
+        });
+      } else if (currentAuth.updateProfile) {
+        // إذا كانت الدالة ممررة بشكل منفصل في إصدارات الـ Modular V9+
+        await currentAuth.updateProfile(user, {
+          displayName: nameVal,
+          photoURL: phoneVal
+        });
+      }
+
+      closeModal(registerModal);
+      resetAuthForms();
+      
+      const oldNotice = document.getElementById("cartAuthNotice");
+      if (oldNotice) oldNotice.remove();
+
+      alert(`🎉 أهلاً بكِ يا ${nameVal}! تم إنشاء حسابكِ بنجاح في متجر Rafqa.`);
+    } catch (error) {
+      console.error("خطأ أثناء إنشاء الحساب:", error);
+      if (registerErrorMsg) {
+        registerErrorMsg.classList.remove("hidden");
+        if (error.code === "auth/email-already-in-use") {
+          registerErrorMsg.textContent = "❌ هذا البريد الإلكتروني مسجل ومستخدم بالفعل مسبقاً.";
+        } else if (error.code === "auth/weak-password") {
+          registerErrorMsg.textContent = "❌ كلمة المرور ضعيفة جداً، يجب أن تكون من 6 خانات على الأقل.";
+        } else {
+          registerErrorMsg.textContent = "❌ حدث خطأ أثناء تسجيل الحساب، يرجى المحاولة لاحقاً.";
+        }
+      }
     }
+  });
+}
 
-    // محاكاة إنشاء وتفعيل الحساب فوراً بالاسم ورقم الجوال
-    currentUser = {
-      displayName: name,
-      phoneNumber: phone,
-      uid: "mock_user_" + Date.now()
-    };
+// التبديل السلس بين النوافذ المنبثقة للـ Auth
+if (openRegister) {
+  openRegister.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeModal(loginModal);
+    resetAuthForms();
+    openModal(registerModal);
+  });
+}
 
-    updateHeaderUser(currentUser);
+if (openLogin) {
+  openLogin.addEventListener("click", (e) => {
+    e.preventDefault();
     closeModal(registerModal);
-    if (registerForm) registerForm.reset();
-    
-    const oldNotice = document.getElementById("cartAuthNotice");
-    if (oldNotice) oldNotice.remove();
-
-    alert(`🎉 أهلاً بكِ يا ${name}! تم إنشاء حسابكِ بنجاح في متجر Rafqa.`);
+    resetAuthForms();
+    openModal(loginModal);
   });
 }
 
@@ -481,14 +495,17 @@ if (cartItemsEl) {
   });
 }
 
+// --- مراقب وموثق حالة الدخول المباشر للمستخدم عبر الحساب ---
 function initializeAppLogic() {
   const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
 
   if (currentAuth) {
     currentAuth.onAuthStateChanged((user) => {
+      currentUser = user;
+      updateHeaderUser(user);
       if (user) {
-        currentUser = user;
-        updateHeaderUser(user);
+        const oldNotice = document.getElementById("cartAuthNotice");
+        if (oldNotice) oldNotice.remove();
       }
     });
   }
