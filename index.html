@@ -126,56 +126,70 @@
     </div>
   </section>
 
-  <div class="modal-overlay hidden" id="loginModal">
-    <div class="modal login-modal">
-      <button class="close-modal" data-close="loginModal">✕</button>
-      <h3>تسجيل الدخول</h3>
-      <form id="loginForm">
-        <label>
-          رقم الجوال
-          <input type="tel" id="loginPhone" placeholder="05xxxxxxxx" required style="direction: ltr; text-align: right;" />
-        </label>
-        
-        <label id="loginOtpLabel" class="hidden" style="margin-top: 10px;">
-          أدخل كود التحقق (SMS)
-          <input type="text" id="loginOtp" placeholder="XXXX" style="direction: ltr; text-align: center;" />
-        </label>
+<div id="loginModal" class="modal hidden">
+  <div class="modal-content">
+    <button class="close-modal" data-close="loginModal">&times;</button>
+    <h2>تسجيل الدخول</h2>
+    
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="loginEmail">البريد الإلكتروني</label>
+        <input type="email" id="loginEmail" placeholder="example@domain.com" required>
+      </div>
 
-        <div id="loginErrorMsg" class="error-text hidden" style="color: #dc2626; background: #fef2f2; border: 1px solid #fca5a5; padding: 8px; border-radius: 8px; font-size: 0.85rem; margin-top: 10px; text-align: right;"></div>
-        
-        <button type="submit" id="authSubmitBtn" class="primary-btn" style="margin-top: 15px; width: 100%;">إرسال كود التحقق</button>
-      </form>
-      
-      <p class="login-note" style="text-align: center; margin-top: 15px;">
-        ليس لديك حساب؟
-        <button id="openRegister" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:700; font-family:inherit;">
-          إنشاء حساب جديد
-        </button>
-      </p>
-    </div>
+      <div class="form-group">
+        <label for="loginPassword">كلمة المرور</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" required>
+      </div>
+
+      <div id="loginErrorMsg" class="error-text hidden"></div>
+
+      <button type="submit" class="auth-btn">دخول</button>
+    </form>
+
+    <div class="auth-divider"><span>أو</span></div>
+    <button id="googleLogin" class="google-btn">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" width="18">
+      تسجيل الدخول بواسطة Google
+    </button>
+
+    <p class="auth-switch">ليس لديكِ حساب؟ <a href="#" id="openRegister">إنشاء حساب جديد</a></p>
   </div>
+</div>
 
-  <div class="modal-overlay hidden" id="registerModal">
-    <div class="modal login-modal">
-      <button class="close-modal" data-close="registerModal">✕</button>
-      <h3>إنشاء حساب جديد</h3>
-      <form id="registerForm">
-        <label>
-          الاسم كاملاً
-          <input type="text" id="registerName" placeholder="اكتب اسمك الكريم" required />
-        </label>
-        <label style="margin-top: 10px;">
-          رقم الجوال
-          <input type="tel" id="registerPhone" placeholder="05xxxxxxxx" required style="direction: ltr; text-align: right;" />
-        </label>
+<div id="registerModal" class="modal hidden">
+  <div class="modal-content">
+    <button class="close-modal" data-close="registerModal">&times;</button>
+    <h2>إنشاء حساب جديد</h2>
+    
+    <form id="registerForm">
+      <div class="form-group">
+        <label for="registerName">الاسم كاملًا</label>
+        <input type="text" id="registerName" placeholder="اكتبي اسمكِ الكريم" required>
+      </div>
 
-        <div id="registerErrorMsg" class="error-text hidden" style="color: #dc2626; background: #fef2f2; border: 1px solid #fca5a5; padding: 8px; border-radius: 8px; font-size: 0.85rem; margin-top: 10px; text-align: right;"></div>
-        
-        <button type="submit" class="primary-btn" style="margin-top: 15px; width: 100%;">تأكيد وإنشاء الحساب</button>
-      </form>
-      <p class="login-note" style="text-align: center; margin-top: 15px;">* يتم توثيق الحساب عبر رقم الجوال في Firebase.</p>
-    </div>
+      <div class="form-group">
+        <label for="registerEmail">البريد الإلكتروني</label>
+        <input type="email" id="registerEmail" placeholder="example@domain.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="registerPhone">رقم الجوال</label>
+        <input type="tel" id="registerPhone" placeholder="05xxxxxxxx" required>
+      </div>
+
+      <div class="form-group">
+        <label for="registerPassword">كلمة المرور</label>
+        <input type="password" id="registerPassword" placeholder="اكتبي كلمة مرور قوية" required>
+      </div>
+
+      <div id="registerErrorMsg" class="error-text hidden"></div>
+
+      <button type="submit" class="auth-btn">تأكيد وإنشاء الحساب</button>
+    </form>
+    <p class="auth-switch">لديكِ حساب بالفعل؟ <a href="#" id="openLogin">تسجيل الدخول</a></p>
   </div>
+</div>
 
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
