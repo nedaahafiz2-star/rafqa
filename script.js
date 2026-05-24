@@ -91,14 +91,17 @@ function mapCategory(cat) {
   }
 }
 
+// فتح النوافذ المنبثقة
 function openModal(el) {
   if (el) el.classList.remove("hidden");
 }
 
+// إغلاق النوافذ المنبثقة
 function closeModal(el) {
   if (el) el.classList.add("hidden");
 }
 
+// تحديث الهيدر باسم المستخدم أو كلمة "حسابي" عند تسجيل الدخول
 function updateHeaderUser(user) {
   if (!loginToggle) return;
   if (user) {
@@ -109,6 +112,7 @@ function updateHeaderUser(user) {
   }
 }
 
+// إعادة تعيين الحقول وإخفاء رسائل الخطأ
 function resetAuthForms() {
   if (loginForm) loginForm.reset();
   if (registerForm) registerForm.reset();
@@ -369,24 +373,28 @@ if (btnMyOrders) {
 
 // 🔐 --- ربط الـ Authentication الفعلي بـ Firebase المحدث ---
 
-// 1. تسجيل الدخول (Email + Password)
+// 1. تسجيل الدخول الذكي (رقم الجوال أو البريد الإلكتروني + كلمة المرور)
 if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (loginErrorMsg) loginErrorMsg.classList.add("hidden");
 
-    const emailVal = loginEmail.value.trim();
+    let inputVal = loginEmail.value.trim();
     const passwordVal = loginPassword.value;
     const currentAuth = getFirebaseAuth();
 
     if (!currentAuth) {
-      console.error("Firebase Auth service is not available.");
       alert("خطأ: لم يتم تحميل خدمة التحقق من الفايربيس بعد.");
       return;
     }
 
+    // 💡 التحقق الذكي: إذا كان المدخل يبدأ بـ 05 ويتكون من أرقام فقط، نعتبره رقم جوال ونقوم بتهيئته تلقائياً
+    if (/^[0-9]+$/.test(inputVal) && inputVal.startsWith("05")) {
+      inputVal = `${inputVal}@rafqa-phone.com`;
+    }
+
     try {
-      await currentAuth.signInWithEmailAndPassword(emailVal, passwordVal);
+      await currentAuth.signInWithEmailAndPassword(inputVal, passwordVal);
       
       closeModal(loginModal);
       resetAuthForms();
@@ -400,9 +408,7 @@ if (loginForm) {
       if (loginErrorMsg) {
         loginErrorMsg.classList.remove("hidden");
         if (error.code === "auth/wrong-password" || error.code === "auth/user-not-found" || error.code === "auth/invalid-credential") {
-          loginErrorMsg.textContent = "❌ البريد الإلكتروني أو كلمة المرور التي أدخلتيها غير صحيحة.";
-        } else if (error.code === "auth/invalid-email") {
-          loginErrorMsg.textContent = "❌ صيغة البريد الإلكتروني غير صحيحة.";
+          loginErrorMsg.textContent = "❌ رقم الجوال/البريد الإلكتروني أو كلمة المرور غير صحيحة.";
         } else {
           loginErrorMsg.textContent = "❌ تعذر تسجيل الدخول، يرجى مراجعة البيانات والمحاولة مرة أخرى.";
         }
@@ -418,19 +424,25 @@ if (registerForm) {
     if (registerErrorMsg) registerErrorMsg.classList.add("hidden");
 
     const nameVal = registerName.value.trim();
-    const emailVal = registerEmail.value.trim();
+    let emailVal = registerEmail.value.trim();
     const phoneVal = registerPhone.value.trim();
     const passwordVal = registerPassword.value;
     
     const currentAuth = getFirebaseAuth();
     if (!currentAuth) return;
 
-    if (phoneVal.length < 10) {
+    // التحقق من صحة رقم الجوال السعودي
+    if (phoneVal.length < 10 || !phoneVal.startsWith("05")) {
       if (registerErrorMsg) {
-        registerErrorMsg.textContent = "❌ يرجى إدخال رقم جوال صحيح مكون من 10 خانات (مثل: 05xxxxxxxx).";
+        registerErrorMsg.textContent = "❌ يرجى إدخال رقم جوال سعودي صحيح مكون من 10 خانات ويبدأ بـ 05.";
         registerErrorMsg.classList.remove("hidden");
       }
       return;
+    }
+
+    // إذا لم تدخل المستخدمة بريداً إلكترونياً، ننشئ لها بريداً تلقائياً مربوطاً برقم جوالها للفايربيس
+    if (!emailVal) {
+      emailVal = `${phoneVal}@rafqa-phone.com`;
     }
 
     try {
@@ -460,7 +472,7 @@ if (registerForm) {
       if (registerErrorMsg) {
         registerErrorMsg.classList.remove("hidden");
         if (error.code === "auth/email-already-in-use") {
-          registerErrorMsg.textContent = "❌ هذا البريد الإلكتروني مسجل ومستخدم بالفعل مسبقاً.";
+          registerErrorMsg.textContent = "❌ رقم الجوال أو البريد الإلكتروني هذا مسجل بالفعل مسبقاً.";
         } else if (error.code === "auth/weak-password") {
           registerErrorMsg.textContent = "❌ كلمة المرور ضعيفة جداً، يجب أن تكون من 6 خانات على الأقل.";
         } else {
