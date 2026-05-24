@@ -56,6 +56,21 @@ let selectedGame = null;
 let cart = [];
 let currentUser = null;
 
+// دالة ذكية للحصول على خدمات Firebase Auth و Database بالإصدارين الحديث والقديم لضمان عدم توقف الموقع
+function getFirebaseAuth() {
+  if (typeof firebase !== "undefined" && firebase.auth) {
+    return firebase.auth();
+  }
+  return window.auth || null;
+}
+
+function firebaseGetDatabase() {
+  if (typeof firebase !== "undefined" && firebase.database) {
+    return firebase.database();
+  }
+  return window.rtdb || (typeof rtdb !== "undefined" ? rtdb : null);
+}
+
 // --- Helpers ---
 function mapCategory(cat) {
   switch (cat) {
@@ -94,7 +109,6 @@ function updateHeaderUser(user) {
   }
 }
 
-// إعادة تعيين النوافذ عند التبديل أو الإغلاق
 function resetAuthForms() {
   if (loginForm) loginForm.reset();
   if (registerForm) registerForm.reset();
@@ -175,7 +189,7 @@ function renderCart() {
 
 // --- Firebase Data Fetching ---
 async function loadGames() {
-  const currentRtdb = window.rtdb || (typeof rtdb !== "undefined" ? rtdb : null);
+  const currentRtdb = firebaseGetDatabase();
   if (!currentRtdb) return;
   
   currentRtdb.ref("games").on("value", (snapshot) => {
@@ -281,7 +295,6 @@ if (cartToggle && cartPanel) {
   });
 }
 
-// 🛒 منع الشراء بدون حساب وإظهار تنبيه ملون بالأحمر في السلة
 if (checkoutToggle) {
   checkoutToggle.addEventListener("click", () => {
     const oldNotice = document.getElementById("cartAuthNotice");
@@ -304,7 +317,6 @@ if (checkoutToggle) {
       return;
     }
 
-    // التوجيه إلى رابط الدفع في Stripe بعد تخطي شروط الأمان
     window.location.href = "https://buy.stripe.com/test_4gMdR229ve1TcgDbuZcfK00";
   });
 }
@@ -315,7 +327,6 @@ if (closeCheckoutBtn) {
   });
 }
 
-// التحكم بالقائمة المنسدلة لحساب المستخدم
 if (loginToggle) {
   loginToggle.addEventListener("click", (e) => {
     e.stopPropagation(); 
@@ -331,10 +342,9 @@ document.addEventListener("click", () => {
   if (userDropdown) userDropdown.classList.add("hidden");
 });
 
-// الخروج الفعلي عبر Firebase
 if (btnLogout) {
   btnLogout.addEventListener("click", () => {
-    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
+    const currentAuth = getFirebaseAuth();
     if (!currentAuth) return;
 
     if (confirm("هل تريد تسجيل الخروج؟")) {
@@ -357,7 +367,7 @@ if (btnMyOrders) {
   });
 }
 
-// 🔐 --- ربط الـ Authentication الفعلي بـ Firebase ---
+// 🔐 --- ربط الـ Authentication الفعلي بـ Firebase المحدث ---
 
 // 1. تسجيل الدخول (Email + Password)
 if (loginForm) {
@@ -367,15 +377,15 @@ if (loginForm) {
 
     const emailVal = loginEmail.value.trim();
     const passwordVal = loginPassword.value;
-    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
+    const currentAuth = getFirebaseAuth();
 
     if (!currentAuth) {
       console.error("Firebase Auth service is not available.");
+      alert("خطأ: لم يتم تحميل خدمة التحقق من الفايربيس بعد.");
       return;
     }
 
     try {
-      // استخدام دالة Firebase الرسمية الممررة في نطاق الـ window أو الملف الشخصي
       await currentAuth.signInWithEmailAndPassword(emailVal, passwordVal);
       
       closeModal(loginModal);
@@ -412,11 +422,9 @@ if (registerForm) {
     const phoneVal = registerPhone.value.trim();
     const passwordVal = registerPassword.value;
     
-    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
-
+    const currentAuth = getFirebaseAuth();
     if (!currentAuth) return;
 
-    // فحص سلامة طول رقم الجوال بشكل سريع
     if (phoneVal.length < 10) {
       if (registerErrorMsg) {
         registerErrorMsg.textContent = "❌ يرجى إدخال رقم جوال صحيح مكون من 10 خانات (مثل: 05xxxxxxxx).";
@@ -426,23 +434,19 @@ if (registerForm) {
     }
 
     try {
-      // أ- إنشاء الحساب بالبريد وكلمة المرور
       const userCredential = await currentAuth.createUserWithEmailAndPassword(emailVal, passwordVal);
       const user = userCredential.user;
 
-      // ب- دمج وتحديث ملف المستخدم لحفظ الاسم ورقم الجوال بذكاء داخل الـ Profile
       if (user.updateProfile) {
         await user.updateProfile({
           displayName: nameVal,
-          photoURL: phoneVal // نستخدم حقل photoURL لتخزين رقم الجوال لتسهيل جلب البيانات دون قواعد بيانات معقدة
-        });
-      } else if (currentAuth.updateProfile) {
-        // إذا كانت الدالة ممررة بشكل منفصل في إصدارات الـ Modular V9+
-        await currentAuth.updateProfile(user, {
-          displayName: nameVal,
-          photoURL: phoneVal
+          photoURL: phoneVal 
         });
       }
+
+      // تحديث فوري للحالة المحلية للـ Header والـ User بعد الحفظ مباشرة لتعمل فوراً
+      currentUser = currentAuth.currentUser || user;
+      updateHeaderUser(currentUser);
 
       closeModal(registerModal);
       resetAuthForms();
@@ -467,7 +471,7 @@ if (registerForm) {
   });
 }
 
-// التبديل السلس بين النوافذ المنبثقة للـ Auth
+// التبديل السلس بين النوافذ المنبثقة
 if (openRegister) {
   openRegister.addEventListener("click", (e) => {
     e.preventDefault();
@@ -495,9 +499,9 @@ if (cartItemsEl) {
   });
 }
 
-// --- مراقب وموثق حالة الدخول المباشر للمستخدم عبر الحساب ---
+// --- مراقب وموثق حالة الدخول المباشر ---
 function initializeAppLogic() {
-  const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
+  const currentAuth = getFirebaseAuth();
 
   if (currentAuth) {
     currentAuth.onAuthStateChanged((user) => {
@@ -520,5 +524,5 @@ function initializeAppLogic() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  setTimeout(initializeAppLogic, 400);
+  setTimeout(initializeAppLogic, 500); // زيادة مهلة الانتظار لضمان استقرار قراءة الفايربيس الجديد
 });
