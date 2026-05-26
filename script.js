@@ -26,23 +26,19 @@ const closeCheckoutBtn = document.getElementById("closeCheckout");
 const loginToggle = document.getElementById("loginToggle");
 const loginModal = document.getElementById("loginModal");
 const loginForm = document.getElementById("loginForm");
-
 const loginEmail = document.getElementById("loginEmail");
 const loginPassword = document.getElementById("loginPassword");
-const loginErrorMsg = document.getElementById("loginErrorMsg");
 
 const registerModal = document.getElementById("registerModal");
 const openRegister = document.getElementById("openRegister");
 const registerForm = document.getElementById("registerForm");
 const registerName = document.getElementById("registerName");
 const registerEmail = document.getElementById("registerEmail");
-const registerPhone = document.getElementById("registerPhone");
 const registerPassword = document.getElementById("registerPassword");
-const registerErrorMsg = document.getElementById("registerErrorMsg");
 
-const openLogin = document.getElementById("openLogin");
-const googleLogin = document.getElementById("googleLogin");
+const googleLoginBtn = document.getElementById("googleLogin");
 
+// عناصر القائمة المنسدلة
 const userDropdown = document.getElementById("userDropdown");
 const btnLogout = document.getElementById("btnLogout");
 const btnMyOrders = document.getElementById("btnMyOrders");
@@ -57,34 +53,39 @@ let currentUser = null;
 // --- Helpers ---
 function mapCategory(cat) {
   switch (cat) {
-    case "eid": return "ألعاب العيد";
-    case "brain": return "ألعاب الذكاء";
-    case "summer": return "ألعاب الذكاء الاصطناعي";
-    case "edu": return "ألعاب تعليمية";
-    case "group": return "ألعاب جماعية";
-    case "kids": return "ألعاب للأطفال";
-    default: return "ألعاب تفاعلية";
+    case "eid":
+      return "ألعاب العيد";
+    case "brain":
+      return "ألعاب الذكاء";
+    case "summer":
+      return "ألعاب الذكاء الاصطناعي";
+    case "edu":
+      return "ألعاب تعليمية";
+    case "group":
+      return "ألعاب جماعية";
+    case "kids":
+      return "ألعاب للأطفال";
+    default:
+      return "ألعاب تفاعلية";
   }
 }
 
-function openModal(el) { if (el) el.classList.remove("hidden"); }
-function closeModal(el) { if (el) el.classList.add("hidden"); }
+function openModal(el) {
+  if (el) el.classList.remove("hidden");
+}
+
+function closeModal(el) {
+  if (el) el.classList.add("hidden");
+}
 
 function updateHeaderUser(user) {
   if (!loginToggle) return;
   if (user) {
-    loginToggle.textContent = user.displayName || "حسابي";
+    loginToggle.textContent = user.displayName || user.email.split('@')[0] || "حسابي";
   } else {
     loginToggle.textContent = "تسجيل الدخول";
     if (userDropdown) userDropdown.classList.add("hidden");
   }
-}
-
-function resetAuthForms() {
-  if (loginForm) loginForm.reset();
-  if (registerForm) registerForm.reset();
-  if (loginErrorMsg) loginErrorMsg.classList.add("hidden");
-  if (registerErrorMsg) registerErrorMsg.classList.add("hidden");
 }
 
 // --- Render functions ---
@@ -99,7 +100,7 @@ function renderGames(list) {
   }
 
   list.forEach((game) => {
-    // ✨🪄 السحر هنا: يقرأ الاسم والصورة سواءً كانت مرفوعة بالنظام القديم أو الجديد لـ لوحة التحكم
+    // إيجاد اسم وصورة اللعبة بمرونة سواءً بالنظام القديم أو الجديد لحقول الفايربيس
     const gameName = game.name || game.title || "لعبة تفاعلية";
     const gameImg = game.image || game.imageUrl || 'placeholder.png';
 
@@ -122,6 +123,7 @@ function renderGames(list) {
         </div>
       </div>
     `;
+
     gamesGrid.appendChild(card);
   });
 
@@ -140,6 +142,7 @@ function renderCart() {
     cart.forEach((item) => {
       const game = games.find((g) => g.id === item.id);
       if (!game) return;
+      
       const gameName = game.name || game.title || "لعبة تفاعلية";
       const gameImg = game.image || game.imageUrl || 'placeholder.png';
 
@@ -170,31 +173,34 @@ function renderCart() {
   if (cartCountEl) cartCountEl.textContent = cart.length;
 }
 
-// 🔐 --- دالة جلب الألعاب المتوافقة تماماً مع روابط الـ compat الحالية في متجركِ ---
-function loadGames() {
-  if (typeof firebase !== "undefined" && firebase.database) {
-    const gamesRef = firebase.database().ref("games");
-    
-    gamesRef.on("value", (snapshot) => {
-      games = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((childSnapshot) => {
-          games.push({
-            id: childSnapshot.key,
-            ...childSnapshot.val()
-          });
-        });
-        games.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      }
-      filteredGames = [...games];
-      renderGames(filteredGames);
-      renderCart();
-    }, (error) => {
-      console.error("خطأ أثناء جلب الألعاب من الفايربيس:", error);
-    });
-  } else {
-    console.error("خطأ: مكتبة Firebase Database لم يتم تحميلها بشكل صحيح.");
+// 🔐 --- دالة جلب الألعاب (تم دمج منطق window.rtdb القديم مع الاحتياطي القياسي لضمان القراءة السليمة) ---
+async function loadGames() {
+  // التحقق من وجود الاتصال بالنظام القديم أو القياسي لـ الـ Realtime Database
+  const currentRtdb = window.rtdb || (typeof rtdb !== "undefined" ? rtdb : null) || (typeof firebase !== "undefined" && firebase.database ? firebase.database() : null);
+  
+  if (!currentRtdb) {
+    console
+.error("خطأ: قاعدة بيانات Firebase (RTDB) غير معرفة بالملفات الحالية.");
+    return;
   }
+  
+  currentRtdb.ref("games").on("value", (snapshot) => {
+    games = [];
+    if (snapshot.exists()) {
+      snapshot.forEach((childSnapshot) => {
+        games.push({
+          id: childSnapshot.key,
+          ...childSnapshot.val()
+        });
+      });
+      games.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    }
+    filteredGames = [...games];
+    renderGames(filteredGames);
+    renderCart();
+  }, (error) => {
+    console.error("خطأ أثناء جلب الألعاب للموقع الأساسي:", error);
+  });
 }
 
 // --- Event wiring ---
@@ -274,8 +280,8 @@ document.querySelectorAll(".close-modal").forEach((btn) => {
     const target = btn.dataset.close;
     if (target === "gameModal") closeModal(gameModal);
     if (target === "cartPanel") closeModal(cartPanel);
-    if (target === "loginModal") { closeModal(loginModal); resetAuthForms(); }
-    if (target === "registerModal") { closeModal(registerModal); resetAuthForms(); }
+    if (target === "loginModal") closeModal(loginModal);
+    if (target === "registerModal") closeModal(registerModal);
   });
 });
 
@@ -285,19 +291,11 @@ if (cartToggle && cartPanel) {
   });
 }
 
+// 🛒 --- ربط زر إتمام الشراء ببوابة دفع Stripe ---
 if (checkoutToggle) {
   checkoutToggle.addEventListener("click", () => {
-    const oldNotice = document.getElementById("cartAuthNotice");
-    if (oldNotice) oldNotice.remove();
-
     if (!currentUser) {
-      const notice = document.createElement("div");
-      notice.id = "cartAuthNotice";
-      notice.className = "error-text";
-      notice.style.marginBottom = "12px";
-      notice.innerHTML = `⚠️ يرجى تسجيل الدخول أولاً لإتمام عملية الشراء!`;
-      
-      checkoutToggle.before(notice);
+      alert("الرجاء تسجيل الدخول أولاً لإتمام الطلب.");
       openModal(loginModal);
       return;
     }
@@ -320,6 +318,9 @@ if (closeCheckoutBtn) {
 if (loginToggle) {
   loginToggle.addEventListener("click", (e) => {
     e.stopPropagation(); 
+    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null) || (typeof firebase !== "undefined" ? firebase.auth() : null);
+    if (!currentAuth) return;
+
     if (currentUser) {
       if (userDropdown) userDropdown.classList.toggle("hidden");
     } else {
@@ -334,17 +335,14 @@ document.addEventListener("click", () => {
 
 if (btnLogout) {
   btnLogout.addEventListener("click", () => {
-    if (typeof firebase !== "undefined" && firebase.auth) {
-      if (confirm("هل تريد تسجيل الخروج؟")) {
-        firebase.auth().signOut().then(() => {
-          if (userDropdown) userDropdown.classList.add("hidden");
-          const oldNotice = document.getElementById("cartAuthNotice");
-          if (oldNotice) oldNotice.remove();
-          alert("تم تسجيل الخروج بنجاح.");
-        }).catch((error) => {
-          console.error("خطأ أثناء تسجيل الخروج:", error);
-        });
-      }
+    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null) || (typeof firebase !== "undefined" ? firebase.auth() : null);
+    if (!currentAuth) return;
+
+    if (confirm("هل تريد تسجيل الخروج؟")) {
+      currentAuth.signOut().then(() => {
+        if (userDropdown) userDropdown.classList.add("hidden");
+        alert("تم تسجيل الخروج بنجاح.");
+      });
     }
   });
 }
@@ -356,106 +354,80 @@ if (btnMyOrders) {
   });
 }
 
-// 🔐 --- تسجيل الدخول الكلاسيكي المتوافق ---
 if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (loginErrorMsg) loginErrorMsg.classList.add("hidden");
+    const email = loginEmail.value.trim();
+    const pass = loginPassword.value;
+    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null) || (typeof firebase !== "undefined" ? firebase.auth() : null);
 
-    let inputVal = loginEmail.value.trim();
-    const passwordVal = loginPassword.value;
-
-    if (typeof firebase === "undefined" || !firebase.auth) {
-      alert("خطأ: لم يتم تحميل خدمة التحقق من الفايربيس بعد.");
-      return;
-    }
-
-    // دعم تسجيل الدخول برقم الجوال عبر تحويله لبريد وهمي داخلياً
-    if (/^[0-9]+$/.test(inputVal) && inputVal.startsWith("05")) {
-      inputVal = `${inputVal}@rafqa-phone.com`;
-    }
+    if (!currentAuth) return;
 
     try {
-      await firebase.auth().signInWithEmailAndPassword(inputVal, passwordVal);
+      await currentAuth.signInWithEmailAndPassword(email, pass);
       closeModal(loginModal);
-      resetAuthForms();
-      const oldNotice = document.getElementById("cartAuthNotice");
-      if (oldNotice) oldNotice.remove();
-      alert("مرحباً بعودتكِ مجدداً إلى Rafqa! 🎉");
-    } catch (error) {
-      console.error("خطأ تسجيل الدخول:", error);
-      if (loginErrorMsg) {
-        loginErrorMsg.classList.remove("hidden");
-        if (error.code === "auth/wrong-password" || error.code === "auth/user-not-found" || error.code === "auth/invalid-credential") {
-          loginErrorMsg.textContent = "❌ رقم الجوال/البريد الإلكتروني أو كلمة المرور غير صحيحة.";
-        } else {
-          loginErrorMsg.textContent = "❌ تعذر تسجيل الدخول، يرجى مراجعة البيانات والمحاولة مرة أخرى.";
-        }
-      }
-    }
-  });
-}
-
-// 🔐 --- إنشاء حساب جديد كلاسيكي متوافق ---
-if (registerForm) {
-  registerForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (registerErrorMsg) registerErrorMsg.classList.add("hidden");
-
-    const nameVal = registerName.value.trim();
-    let emailVal = registerEmail.value.trim();
-    const passwordVal = registerPassword.value;
-
-    if (typeof firebase === "undefined" || !firebase.auth) return;
-
-    try {
-      const userCredential = await firebase.auth().createUserWithEmailAndPassword(emailVal, passwordVal);
-      const user = userCredential.user;
-
-      await user.updateProfile({
-        displayName: nameVal
-      });
-
-      currentUser = firebase.auth().currentUser || user;
-      updateHeaderUser(currentUser);
-
-      closeModal(registerModal);
-      resetAuthForms();
-      const oldNotice = document.getElementById("cartAuthNotice");
-      if (oldNotice) oldNotice.remove();
-
-      alert(`🎉 أهلاً بكِ يا ${nameVal}! تم إنشاء حسابكِ بنجاح في متجر Rafqa.`);
-    } catch (error) {
-      console.error("خطأ أثناء إنشاء الحساب:", error);
-      if (registerErrorMsg) {
-        registerErrorMsg.classList.remove("hidden");
-        if (error.code === "auth/email-already-in-use") {
-          registerErrorMsg.textContent = "❌ البريد الإلكتروني هذا مسجل بالفعل مسبقاً.";
-        } else if (error.code === "auth/weak-password") {
-          registerErrorMsg.textContent = "❌ كلمة المرور ضعيفة جداً، يجب أن تكون من 6 خانات على الأقل.";
-        } else {
-          registerErrorMsg.textContent = "❌ حدث خطأ أثناء تسجيل الحساب، يرجى المحاولة لاحقاً.";
-        }
-      }
+      alert("مرحباً بعودتكِ مجدداً! 🎉");
+    } catch (err) {
+      alert("خطأ في تسجيل الدخول: " + err.message);
     }
   });
 }
 
 if (openRegister) {
-  openRegister.addEventListener("click", (e) => {
-    e.preventDefault();
+  openRegister.addEventListener("click", () => {
     closeModal(loginModal);
-    resetAuthForms();
     openModal(registerModal);
   });
 }
 
-if (openLogin) {
-  openLogin.addEventListener("click", (e) => {
+if (registerForm) {
+  registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    closeModal(registerModal);
-    resetAuthForms();
-    openModal(loginModal);
+    const name = registerName.value.trim();
+    const email = registerEmail.value.trim();
+    const pass = registerPassword.value;
+    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null) || (typeof firebase !== "undefined" ? firebase.auth() : null);
+
+    if (!currentAuth) return;
+
+    if (pass.length < 6) {
+      alert("عذراً، يجب أن تكون كلمة المرور من 6 خانات أو أكثر لحماية حسابك.");
+      return;
+    }
+
+    try {
+      const cred = await currentAuth.createUserWithEmailAndPassword(email, pass);
+      await cred.user.updateProfile({ displayName: name });
+      
+      try {
+        await cred.user.sendEmailVerification();
+      } catch (verErr) {
+        console.warn("تعذر إرسال بريد التحقق:", verErr);
+      }
+
+      alert("🎉 تم إنشاء حسابكِ بنجاح أهلاً بكِ في Rafqa!");
+      updateHeaderUser(cred.user);
+      closeModal(registerModal);
+    } catch (err) {
+      alert("حدث خطأ أثناء إنشاء الحساب: " + err.message);
+    }
+  });
+}
+
+if (googleLoginBtn) {
+  googleLoginBtn.addEventListener("click", async () => {
+    if (typeof firebase === "undefined") return;
+    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null) || (typeof firebase !== "undefined" ? firebase.auth() : null);
+    if (!currentAuth) return;
+
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+      await currentAuth.signInWithPopup(provider);
+      closeModal(loginModal);
+      alert("تم تسجيل الدخول عبر Google بنجاح! 🚀");
+    } catch (err) {
+      alert("فشل تسجيل الدخول بـ قوقل: " + err.message);
+    }
   });
 }
 
@@ -468,23 +440,25 @@ if (cartItemsEl) {
   });
 }
 
-// --- تشغيل النظام ومراقبة حالة الدخول المباشر ---
 function initializeAppLogic() {
-  if (typeof firebase !== "undefined" && firebase.auth) {
-    firebase.auth().onAuthStateChanged((user) => {
+  const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null) || (typeof firebase !== "undefined" ? firebase.auth() : null);
+
+  if (currentAuth) {
+    currentAuth.onAuthStateChanged((user) => {
       currentUser = user;
       updateHeaderUser(user);
-      if (user) {
-        const oldNotice = document.getElementById("cartAuthNotice");
-        if (oldNotice) oldNotice.remove();
-      }
     });
   }
   
-  loadGames();
+  try {
+    loadGames();
+  } catch (error) {
+    console.error("تعذر جلب الألعاب فوراً، جاري محاولة البناء الأساسي:", error);
+  }
+
   renderCart();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  initializeAppLogic();
+  setTimeout(initializeAppLogic, 400);
 });
