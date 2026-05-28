@@ -28,21 +28,17 @@ const loginModal = document.getElementById("loginModal");
 const loginForm = document.getElementById("loginForm");
 const loginEmail = document.getElementById("loginEmail");
 const loginPassword = document.getElementById("loginPassword");
-const loginErrorMsg = document.getElementById("loginErrorMsg");
 
 const registerModal = document.getElementById("registerModal");
 const openRegister = document.getElementById("openRegister");
-const openLogin = document.getElementById("openLogin");
 const registerForm = document.getElementById("registerForm");
 const registerName = document.getElementById("registerName");
-const registerPhone = document.getElementById("registerPhone");
 const registerEmail = document.getElementById("registerEmail");
 const registerPassword = document.getElementById("registerPassword");
-const registerErrorMsg = document.getElementById("registerErrorMsg");
-
+const registerPhone = document.getElementById("registerPhone"); // حقل رقم الجوال الحقيقي
 const googleLoginBtn = document.getElementById("googleLogin");
 
-// عناصر القائمة المنسدلة للـ User
+// عناصر القائمة المنسدلة الجديدة
 const userDropdown = document.getElementById("userDropdown");
 const btnLogout = document.getElementById("btnLogout");
 const btnMyOrders = document.getElementById("btnMyOrders");
@@ -57,52 +53,57 @@ let currentUser = null;
 // --- Helpers ---
 function mapCategory(cat) {
   switch (cat) {
-    case "eid": return "ألعاب العيد";
-    case "brain": return "ألعاب الذكاء";
-    case "summer": return "ألعاب الذكاء الاصطناعي";
-    case "edu": return "ألعاب تعليمية";
-    default: return "ألعاب تفاعلية";
+    case "eid":
+      return "ألعاب العيد";
+    case "brain":
+      return "ألعاب الذكاء";
+    case "summer":
+      return "ألعاب الذكاء الاصطناعي";
+    case "edu":
+      return "ألعاب تعليمية";
+    case "group":
+      return "ألعاب جماعية";
+    case "kids":
+      return "ألعاب للأطفال";
+    default:
+      return "ألعاب تفاعلية";
   }
 }
 
-function openModal(el) { if (el) el.classList.remove("hidden"); }
-function closeModal(el) { if (el) el.classList.add("hidden"); }
+function openModal(el) {
+  if (el) el.classList.remove("hidden");
+}
+
+function closeModal(el) {
+  if (el) el.classList.add("hidden");
+}
 
 function updateHeaderUser(user) {
   if (!loginToggle) return;
   if (user) {
-    loginToggle.textContent = user.displayName || "حسابي 👤";
+    loginToggle.textContent = user.displayName || (user.email ? user.email.split('@')[0] : "حسابي");
   } else {
     loginToggle.textContent = "تسجيل الدخول";
     if (userDropdown) userDropdown.classList.add("hidden");
   }
 }
 
-// --- وظائف عرض الألعاب بجودة وسرعة عالية ---
+// --- Render functions ---
 function renderGames(list) {
   if (!gamesGrid) return;
   gamesGrid.innerHTML = "";
   
-  if (list.length === 0) {
-    gamesGrid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">لا توجد ألعاب معروضة حالياً في هذا القسم.</p>`;
-    if (gamesCount) gamesCount.textContent = "0 لعبة";
-    return;
-  }
-
   list.forEach((game) => {
-    const gameName = game.name || game.title || "لعبة تفاعلية";
-    const gameImg = game.image || 'placeholder.png';
-
     const card = document.createElement("article");
     card.className = "game-card";
     card.dataset.id = game.id;
 
     card.innerHTML = `
       <div class="game-thumb">
-        <img src="${gameImg}" alt="${gameName}">
+        <img src="${game.image}" alt="${game.name}">
       </div>
       <div class="game-body">
-        <div class="game-title">${gameName}</div>
+        <div class="game-title">${game.name}</div>
         <div class="game-meta">
           <span>${mapCategory(game.category)}</span>
           <span class="game-price">${game.price} ر.س</span>
@@ -112,10 +113,13 @@ function renderGames(list) {
         </div>
       </div>
     `;
+
     gamesGrid.appendChild(card);
   });
 
-  if (gamesCount) gamesCount.textContent = `${list.length} لعبة`;
+  if (gamesCount) {
+    gamesCount.textContent = `${list.length} لعبة`;
+  }
 }
 
 function renderCart() {
@@ -123,21 +127,19 @@ function renderCart() {
   cartItemsEl.innerHTML = "";
   
   if (cart.length === 0) {
-    cartItemsEl.innerHTML = `<p style="font-size:0.85rem;color:#6b7280;padding:10px;text-align:center;">السلة فارغة حالياً.</p>`;
+    cartItemsEl.innerHTML = `<p style="font-size:0.85rem;color:#6b7280;padding:10px;">السلة فارغة حالياً.</p>`;
   } else {
     cart.forEach((item) => {
       const game = games.find((g) => g.id === item.id);
       if (!game) return;
-      
-      const gameName = game.name || game.title;
-      const gameImg = game.image || 'placeholder.png';
-
       const row = document.createElement("div");
       row.className = "cart-item";
       row.innerHTML = `
-        <div class="cart-item-thumb"><img src="${gameImg}" alt="${gameName}"></div>
+        <div class="cart-item-thumb">
+          <img src="${game.image}" alt="${game.name}">
+        </div>
         <div class="cart-item-info">
-          <div class="cart-item-title">${gameName}</div>
+          <div class="cart-item-title">${game.name}</div>
           <div class="cart-item-meta">
             <span>${game.price} ر.س</span>
             <button class="cart-remove" data-remove="${game.id}">حذف</button>
@@ -157,7 +159,7 @@ function renderCart() {
   if (cartCountEl) cartCountEl.textContent = cart.length;
 }
 
-// 🔐 دالة استدعاء الألعاب من السيرفر
+// --- Firebase ---
 async function loadGames() {
   const currentRtdb = window.rtdb || (typeof rtdb !== "undefined" ? rtdb : null);
   if (!currentRtdb) return;
@@ -166,42 +168,52 @@ async function loadGames() {
     games = [];
     if (snapshot.exists()) {
       snapshot.forEach((childSnapshot) => {
-        games.push({ id: childSnapshot.key, ...childSnapshot.val() });
+        games.push({
+          id: childSnapshot.key,
+          ...childSnapshot.val()
+        });
       });
       games.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     }
     filteredGames = [...games];
     renderGames(filteredGames);
     renderCart();
+  }, (error) => {
+    console.error("خطأ أثناء جلب الألعاب للموقع الأساسي:", error);
   });
 }
 
-// --- الأحداث والربط (Event Wiring) ---
+// --- Event wiring ---
 if (searchToggle && searchBar) {
   searchToggle.addEventListener("click", () => {
     searchBar.classList.toggle("hidden");
-    if (!searchBar.classList.contains("hidden") && searchInput) searchInput.focus();
+    if (!searchBar.classList.contains("hidden") && searchInput) {
+      searchInput.focus();
+    }
   });
 }
 
 if (searchInput) {
   searchInput.addEventListener("input", (e) => {
     const q = e.target.value.trim().toLowerCase();
-    filteredGames = games.filter(g => (g.name || "").toLowerCase().includes(q));
+    filteredGames = games.filter((g) =>
+      g.name.toLowerCase().includes(q)
+    );
     renderGames(filteredGames);
   });
 }
 
 if (scrollToGamesBtn) {
   scrollToGamesBtn.addEventListener("click", () => {
-    document.getElementById("gamesSection")?.scrollIntoView({ behavior: "smooth" });
+    const sect = document.getElementById("gamesSection");
+    if (sect) sect.scrollIntoView({ behavior: "smooth" });
   });
 }
 
 document.querySelectorAll(".category-card").forEach((btn) => {
   btn.addEventListener("click", () => {
     const cat = btn.dataset.category;
-    filteredGames = games.filter(g => g.category === cat);
+    filteredGames = games.filter((g) => g.category === cat);
     renderGames(filteredGames);
   });
 });
@@ -211,7 +223,8 @@ if (gamesGrid) {
     const addId = e.target.dataset.add;
     const card = e.target.closest(".game-card");
     if (!card) return;
-    const game = games.find(g => g.id === card.dataset.id);
+    const id = card.dataset.id;
+    const game = games.find((g) => g.id === id);
     if (!game) return;
 
     if (addId) {
@@ -219,10 +232,10 @@ if (gamesGrid) {
       renderCart();
     } else {
       selectedGame = game;
-      if (modalImage) modalImage.src = game.image || 'placeholder.png';
+      if (modalImage) modalImage.src = game.image;
       if (modalTitle) modalTitle.textContent = game.name;
       if (modalCategory) modalCategory.textContent = mapCategory(game.category);
-      if (modalDescription) modalDescription.textContent = game.description || "لا يوجد وصف متوفر.";
+      if (modalDescription) modalDescription.textContent = game.description;
       if (modalPrice) modalPrice.textContent = `${game.price} ر.س`;
       openModal(gameModal);
     }
@@ -231,121 +244,168 @@ if (gamesGrid) {
 
 if (modalAddToCart) {
   modalAddToCart.addEventListener("click", () => {
-    if (selectedGame) { cart.push({ id: selectedGame.id }); renderCart(); closeModal(gameModal); }
+    if (!selectedGame) return;
+    cart.push({ id: selectedGame.id });
+    renderCart();
+    closeModal(gameModal);
   });
 }
 
-// إغلاق النوافذ المنبثقة بمرونة
-document.querySelectorAll(".close-modal").forEach(btn => {
+document.querySelectorAll(".close-modal").forEach((btn) => {
   btn.addEventListener("click", () => {
     const target = btn.dataset.close;
     if (target === "gameModal") closeModal(gameModal);
     if (target === "cartPanel") closeModal(cartPanel);
     if (target === "loginModal") closeModal(loginModal);
     if (target === "registerModal") closeModal(registerModal);
-    if (target === "checkoutSection") closeModal(checkoutSection);
   });
 });
 
 if (cartToggle && cartPanel) {
-  cartToggle.addEventListener("click", () => cartPanel.classList.toggle("hidden"));
+  cartToggle.addEventListener("click", () => {
+    cartPanel.classList.toggle("hidden");
+  });
 }
 
-if (openRegister) {
-  openRegister.addEventListener("click", (e) => { e.preventDefault(); closeModal(loginModal); openModal(registerModal); });
-}
-if (openLogin) {
-  openLogin.addEventListener("click", (e) => { e.preventDefault(); closeModal(registerModal); openModal(loginModal); });
-}
-
-// 🛒 زر إتمام الشراء الدفع
+// 🛒 --- ربط زر إتمام الشراء ببوابة دفع Stripe ---
 if (checkoutToggle) {
   checkoutToggle.addEventListener("click", () => {
-    if (!currentUser) { alert("الرجاء تسجيل الدخول أولاً لإتمام طلبكِ."); openModal(loginModal); return; }
-    if (cart.length === 0) { alert("سلتكِ فارغة حالياً!"); return; }
-    window.location.href = "https://buy.stripe.com/test_4gMdR229ve1TcgDbuZcfK00";
+    if (!currentUser) {
+      alert("الرجاء تسجيل الدخول أولاً لإتمام الطلب.");
+      openModal(loginModal);
+      return;
+    }
+
+    if (cart.length === 0) {
+      alert("سلتك فارغة حالياً، يرجى إضافة لعبة أولاً.");
+      return;
+    }
+
+    // ⚠️ استبدلي هذا الرابط برابط Stripe الحقيقي قبل النشر
+    window.location.href = "https://buy.stripe.com/YOUR_REAL_STRIPE_LINK";
+  });
+}
+
+if (closeCheckoutBtn) {
+  closeCheckoutBtn.addEventListener("click", () => {
+    closeModal(checkoutSection);
   });
 }
 
 if (loginToggle) {
   loginToggle.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (currentUser) userDropdown?.classList.toggle("hidden");
-    else openModal(loginModal);
+    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
+    if (!currentAuth) return;
+
+    if (currentUser) {
+      if (userDropdown) userDropdown.classList.toggle("hidden");
+    } else {
+      openModal(loginModal);
+    }
   });
 }
-document.addEventListener("click", () => userDropdown?.classList.add("hidden"));
+
+document.addEventListener("click", () => {
+  if (userDropdown) userDropdown.classList.add("hidden");
+});
 
 if (btnLogout) {
   btnLogout.addEventListener("click", () => {
     const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
-    if (currentAuth && confirm("هل تودين تسجيل الخروج؟")) currentAuth.signOut();
+    if (!currentAuth) return;
+
+    if (confirm("هل تريد تسجيل الخروج؟")) {
+      currentAuth.signOut().then(() => {
+        if (userDropdown) userDropdown.classList.add("hidden");
+        alert("تم تسجيل الخروج بنجاح.");
+      });
+    }
   });
 }
 
 if (btnMyOrders) {
-  btnMyOrders.addEventListener("click", (e) => { e.preventDefault(); alert("قريباً: عرض الألعاب التي تم شراؤها! 🎮✨"); });
+  btnMyOrders.addEventListener("click", (e) => {
+    e.preventDefault();
+    alert("قريباً: سيتم عرض ألعابك التفاعلية التي قمتِ بشرائها هنا! 🎮✨");
+  });
 }
 
-// 🔐 نموذج تسجيل الدخول (مرونة الدخول برقم جوال كـ وهمي أو ببريد حقيقي)
+if (openRegister) {
+  openRegister.addEventListener("click", () => {
+    closeModal(loginModal);
+    openModal(registerModal);
+  });
+}
+
+// 🔐 ==========================================================================
+// 🛠️ تفعيل وتعديل نموذج تسجيل الدخول برقم جوال أو إيميل حقيقي
+// ==========================================================================
 if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    let userVal = loginEmail.value.trim();
+    let userInput = loginEmail.value.trim();
     const pass = loginPassword.value;
     const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
 
     if (!currentAuth) return;
-    if (loginErrorMsg) loginErrorMsg.classList.add("hidden");
 
-    // إذا تم إدخال رقم جوال نقوم بتحويله لبريد وهمي لتسهيل الدخول
-    if (!userVal.includes("@")) {
-      userVal = userVal + "@rafqa-store.com";
+    // دعم تسجيل الدخول برقم الجوال أيضاً عبر تحويله إلى صيغة بريد إلكتروني افتراضية متطابقة مع التسجيل
+    if (!userInput.includes("@")) {
+      userInput = userInput + "@rafqa-store.com";
     }
 
     try {
-      await currentAuth.signInWithEmailAndPassword(userVal, pass);
+      await currentAuth.signInWithEmailAndPassword(userInput, pass);
       closeModal(loginModal);
-      alert("مرحباً بعودتكِ إلى متجر رِفقة! 🎉");
+      alert("مرحباً بعودتكِ مجدداً إلى متجر رِفقة! 🎉🧡");
     } catch (err) {
-      if (loginErrorMsg) {
-        loginErrorMsg.textContent = "خطأ: تأكدي من البيانات أو كلمة المرور بشكل صحيح.";
-        loginErrorMsg.classList.remove("hidden");
-      }
+      alert("خطأ في تسجيل الدخول: يرجى التحقق من صحة البيانات أو كلمة المرور.");
     }
   });
 }
 
-// 👤 نموذج إنشاء الحساب الجديد والمطوّر بالكامل
+// 👤 ==========================================================================
+// 🛠️ تفعيل وتعديل نموذج إنشاء حساب جديد بالكامل وبشكل حقيقي (مع الجوال)
+// ==========================================================================
 if (registerForm) {
   registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = registerName.value.trim();
-    const phone = registerPhone.value.trim();
+    const phone = registerPhone ? registerPhone.value.trim() : "";
     let email = registerEmail.value.trim();
     const pass = registerPassword.value;
+    
     const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
     const currentDb = window.db || (typeof db !== "undefined" ? db : null);
 
     if (!currentAuth) return;
-    if (registerErrorMsg) registerErrorMsg.classList.add("hidden");
 
+    // 1. التحقق من صحة وطول رقم الجوال الحقيقي لخدمة العملاء
     if (phone.length < 10) {
-      alert("الرجاء إدخال رقم جوال صحيح مكون من 10 خانات.");
+      alert("الرجاء إدخال رقم جوال حقيقي مكون من 10 خانات (مثال: 05xxxxxxxx).");
       return;
     }
 
-    // إذا لم يكتب المستخدم إيميل نقوم بصناعة إيميل تلقائي له باستخدام رقم جواله ليتم تفعيل الحساب فوراً
+    // 2. التحقق من طول كلمة المرور لأمان وحماية الحساب
+    if (pass.length < 6) {
+      alert("عذراً، يجب أن تكون كلمة المرور من 6 خانات أو أكثر لحماية حسابك.");
+      return;
+    }
+
+    // 3. مرونة التسجيل: إذا لم يتم إدخال إيميل نقوم بإنشاء بريد مخصص تلقائياً يعتمد على الجوال لضمان تشغيل الحساب فوراً
     if (!email) {
       email = phone + "@rafqa-store.com";
     }
 
     try {
+      // أ) إنشاء الحساب الفعلي داخل نظام الحسابات (Firebase Authentication)
       const cred = await currentAuth.createUserWithEmailAndPassword(email, pass);
-      // تحديث اسم المستخدم الظاهري في حسابات الفايربيس
+      
+      // ب) تحديث وتثبيت اسم العميل الظاهر بـ الهيدر
       await cred.user.updateProfile({ displayName: name });
       
-      // حفظ بيانات المستخدم الإضافية (رقم الجوال والاسم والبريد) بقاعدة البيانات لحفظ حقوق مشترياته
+      // جـ) حفظ بيانات العميل بالكامل (رقم الجوال الحقيقي والاسم والبريد) داخل الـ Database لتوثيق مشترياته
       if (currentDb) {
         await currentDb.collection("users").doc(cred.user.uid).set({
           uid: cred.user.uid,
@@ -356,13 +416,11 @@ if (registerForm) {
         });
       }
 
-      alert("🎉 مرحباً بكِ يا " + name + "! تم إنشاء حسابكِ وتفعيله بنجاح في متجر Rafqa.");
+      alert("🎉 تم إنشاء حسابكِ بنجاح! أهلاً بكِ في عائلة Rafqa.");
+      updateHeaderUser(cred.user);
       closeModal(registerModal);
     } catch (err) {
-      if (registerErrorMsg) {
-        registerErrorMsg.textContent = "فشل إنشاء الحساب: " + err.message;
-        registerErrorMsg.classList.remove("hidden");
-      }
+      alert("حدث خطأ أثناء إنشاء الحساب: " + err.message);
     }
   });
 }
@@ -377,9 +435,9 @@ if (googleLoginBtn) {
     try {
       await currentAuth.signInWithPopup(provider);
       closeModal(loginModal);
-      alert("تم تسجيل الدخول بواسطة Google بنجاح! 🚀");
+      alert("تم تسجيل الدخول عبر Google بنجاح! 🚀");
     } catch (err) {
-      alert("عذراً، فشل تسجيل الدخول بقوقل: " + err.message);
+      alert("فشل تسجيل الدخول بـ قوقل: " + err.message);
     }
   });
 }
@@ -388,23 +446,39 @@ if (cartItemsEl) {
   cartItemsEl.addEventListener("click", (e) => {
     const removeId = e.target.dataset.remove;
     if (!removeId) return;
-    cart = cart.filter(item => item.id !== removeId);
+    cart = cart.filter((item) => item.id !== removeId);
     renderCart();
   });
 }
 
 function initializeAppLogic() {
   const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
+
   if (currentAuth) {
     currentAuth.onAuthStateChanged((user) => {
       currentUser = user;
       updateHeaderUser(user);
     });
   }
-  loadGames();
+  
+  try {
+    loadGames();
+  } catch (error) {
+    console.error("تعذر جلب الألعاب فوراً، جاري محاولة البناء الأساسي:", error);
+  }
+
   renderCart();
 }
 
+// ننتظر Firebase يتهيأ فعلياً بدل setTimeout عشوائي
 window.addEventListener("DOMContentLoaded", () => {
-  setTimeout(initializeAppLogic, 400);
+  let attempts = 0;
+  const waitForFirebase = setInterval(() => {
+    const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
+    attempts++;
+    if (currentAuth || attempts >= 30) {
+      clearInterval(waitForFirebase);
+      initializeAppLogic();
+    }
+  }, 100);
 });
