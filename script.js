@@ -71,11 +71,16 @@ function mapCategory(cat) {
 }
 
 function openModal(el) {
-  if (el) el.classList.remove("hidden");
+  if (!el) return;
+  el.classList.remove("hidden");
+  // دعم كلا النظامين modal-overlay و modal
+  el.style.display = "flex";
 }
 
 function closeModal(el) {
-  if (el) el.classList.add("hidden");
+  if (!el) return;
+  el.classList.add("hidden");
+  el.style.display = "";
 }
 
 function updateHeaderUser(user) {
@@ -393,10 +398,9 @@ if (registerForm) {
       return;
     }
 
-    // 3. مرونة التسجيل: إذا لم يتم إدخال إيميل نقوم بإنشاء بريد مخصص تلقائياً يعتمد على الجوال لضمان تشغيل الحساب فوراً
-    if (!email) {
-      email = phone + "@rafqa-store.com";
-    }
+    // 3. الحساب يُنشأ دائماً بالرقم بغض النظر عن الإيميل
+    const realEmail = email; // نحفظ الإيميل الحقيقي في Firestore فقط
+    email = phone + "@rafqa-store.com"; // هذا هو الحساب الفعلي دائماً
 
     try {
       // أ) إنشاء الحساب الفعلي داخل نظام الحسابات (Firebase Authentication)
@@ -411,7 +415,7 @@ if (registerForm) {
           uid: cred.user.uid,
           name: name,
           phone: phone,
-          email: email,
+          email: realEmail || "",
           createdAt: Date.now()
         });
       }
