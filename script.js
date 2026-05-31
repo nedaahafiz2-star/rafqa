@@ -71,25 +71,61 @@ function mapCategory(cat) {
 }
 
 function openModal(el) {
-  if (!el) return;
-  el.classList.remove("hidden");
-  // دعم كلا النظامين modal-overlay و modal
-  el.style.display = "flex";
+  if (el) el.classList.remove("hidden");
 }
 
 function closeModal(el) {
-  if (!el) return;
-  el.classList.add("hidden");
-  el.style.display = "";
+  if (el) el.classList.add("hidden");
 }
 
 function updateHeaderUser(user) {
   if (!loginToggle) return;
   if (user) {
-    loginToggle.textContent = user.displayName || (user.email ? user.email.split('@')[0] : "حسابي");
+    loginToggle.textContent = user.displayName || "حسابي 👤";
+    loadUserProfile(user);
   } else {
     loginToggle.textContent = "تسجيل الدخول";
     if (userDropdown) userDropdown.classList.add("hidden");
+    // إزالة بيانات المستخدم من الدروب داون
+    const profileInfo = document.getElementById("userProfileInfo");
+    if (profileInfo) profileInfo.remove();
+  }
+}
+
+// جلب بيانات المستخدم من Firestore وعرضها في الدروب داون
+async function loadUserProfile(user) {
+  const currentDb = window.db || (typeof db !== "undefined" ? db : null);
+  if (!currentDb || !userDropdown) return;
+
+  try {
+    const doc = await currentDb.collection("users").doc(user.uid).get();
+    const data = doc.exists ? doc.data() : null;
+
+    const name  = data?.name  || user.displayName || "مستخدم";
+    const phone = data?.phone || "";
+    const email = data?.email || (user.email && !user.email.includes("@rafqa-store.com") ? user.email : "");
+    const info  = phone || email || "";
+
+    // احذف القديم لو موجود
+    const old = document.getElementById("userProfileInfo");
+    if (old) old.remove();
+
+    // أضف بيانات المستخدم في أعلى الدروب داون
+    const profileDiv = document.createElement("div");
+    profileDiv.id = "userProfileInfo";
+    profileDiv.style.cssText = `
+      padding: 12px 15px;
+      border-bottom: 1px solid rgba(148,163,184,0.15);
+      background: var(--primary-soft);
+    `;
+    profileDiv.innerHTML = `
+      <div style="font-weight:700;font-size:0.95rem;color:var(--text-main);">👤 ${name}</div>
+      ${info ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:3px;">${phone ? '📱 ' + phone : '✉️ ' + email}</div>` : ""}
+    `;
+
+    userDropdown.insertBefore(profileDiv, userDropdown.firstChild);
+  } catch (err) {
+    console.error("فشل جلب بيانات المستخدم:", err);
   }
 }
 
@@ -343,6 +379,15 @@ if (openRegister) {
   });
 }
 
+const openLogin = document.getElementById("openLogin");
+if (openLogin) {
+  openLogin.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeModal(registerModal);
+    openModal(loginModal);
+  });
+}
+
 // 🔐 ==========================================================================
 // 🛠️ تفعيل وتعديل نموذج تسجيل الدخول برقم جوال أو إيميل حقيقي
 // ==========================================================================
@@ -398,9 +443,10 @@ if (registerForm) {
       return;
     }
 
-    // 3. الحساب يُنشأ دائماً بالرقم بغض النظر عن الإيميل
-    const realEmail = email; // نحفظ الإيميل الحقيقي في Firestore فقط
-    email = phone + "@rafqa-store.com"; // هذا هو الحساب الفعلي دائماً
+    // 3. مرونة التسجيل: إذا لم يتم إدخال إيميل نقوم بإنشاء بريد مخصص تلقائياً يعتمد على الجوال لضمان تشغيل الحساب فوراً
+    if (!email) {
+      email = phone + "@rafqa-store.com";
+    }
 
     try {
       // أ) إنشاء الحساب الفعلي داخل نظام الحسابات (Firebase Authentication)
@@ -415,7 +461,7 @@ if (registerForm) {
           uid: cred.user.uid,
           name: name,
           phone: phone,
-          email: realEmail || "",
+          email: email,
           createdAt: Date.now()
         });
       }
