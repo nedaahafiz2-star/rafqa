@@ -100,10 +100,10 @@ async function loadUserProfile(user) {
     const profileDiv = document.createElement("div");
     profileDiv.id = "userProfileInfo";
     profileDiv.style.cssText = "padding:12px 15px;border-bottom:1px solid rgba(148,163,184,0.15);background:var(--primary-soft);";
-    profileDiv.innerHTML = \`
-      <div style="font-weight:700;font-size:0.95rem;color:var(--text-main);">👤 \${name}</div>
-      \${info ? \`<div style="font-size:0.8rem;color:var(--text-muted);margin-top:3px;">\${phone ? '📱 ' + phone : '✉️ ' + email}</div>\` : ""}
-    \`;
+    profileDiv.innerHTML = `
+      <div style="font-weight:700;font-size:0.95rem;color:var(--text-main);">👤 ${name}</div>
+      ${info ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:3px;">${phone ? '📱 ' + phone : '✉️ ' + email}</div>` : ""}
+    `;
     userDropdown.insertBefore(profileDiv, userDropdown.firstChild);
   } catch (err) {
     console.error("فشل جلب بيانات المستخدم:", err);
@@ -117,45 +117,45 @@ function renderGames(list) {
     const card = document.createElement("article");
     card.className = "game-card";
     card.dataset.id = game.id;
-    card.innerHTML = \`
-      <div class="game-thumb"><img src="\${game.image}" alt="\${game.name}"></div>
+    card.innerHTML = `
+      <div class="game-thumb"><img src="${game.image}" alt="${game.name}"></div>
       <div class="game-body">
-        <div class="game-title">\${game.name}</div>
+        <div class="game-title">${game.name}</div>
         <div class="game-meta">
-          <span>\${mapCategory(game.category)}</span>
-          <span class="game-price">\${game.price} ر.س</span>
+          <span>${mapCategory(game.category)}</span>
+          <span class="game-price">${game.price} ر.س</span>
         </div>
         <div class="game-actions">
-          <button class="add-btn" data-add="\${game.id}">إضافة إلى السلة</button>
+          <button class="add-btn" data-add="${game.id}">إضافة إلى السلة</button>
         </div>
       </div>
-    \`;
+    `;
     gamesGrid.appendChild(card);
   });
-  if (gamesCount) gamesCount.textContent = \`\${list.length} لعبة\`;
+  if (gamesCount) gamesCount.textContent = `${list.length} لعبة`;
 }
 
 function renderCart() {
   if (!cartItemsEl) return;
   cartItemsEl.innerHTML = "";
   if (cart.length === 0) {
-    cartItemsEl.innerHTML = \`<p style="font-size:0.85rem;color:#6b7280;padding:10px;">السلة فارغة حالياً.</p>\`;
+    cartItemsEl.innerHTML = `<p style="font-size:0.85rem;color:#6b7280;padding:10px;">السلة فارغة حالياً.</p>`;
   } else {
     cart.forEach((item) => {
       const game = games.find((g) => g.id === item.id);
       if (!game) return;
       const row = document.createElement("div");
       row.className = "cart-item";
-      row.innerHTML = \`
-        <div class="cart-item-thumb"><img src="\${game.image}" alt="\${game.name}"></div>
+      row.innerHTML = `
+        <div class="cart-item-thumb"><img src="${game.image}" alt="${game.name}"></div>
         <div class="cart-item-info">
-          <div class="cart-item-title">\${game.name}</div>
+          <div class="cart-item-title">${game.name}</div>
           <div class="cart-item-meta">
-            <span>\${game.price} ر.س</span>
-            <button class="cart-remove" data-remove="\${game.id}">حذف</button>
+            <span>${game.price} ر.س</span>
+            <button class="cart-remove" data-remove="${game.id}">حذف</button>
           </div>
         </div>
-      \`;
+      `;
       cartItemsEl.appendChild(row);
     });
   }
@@ -237,7 +237,7 @@ if (gamesGrid) {
       if (modalTitle) modalTitle.textContent = game.name;
       if (modalCategory) modalCategory.textContent = mapCategory(game.category);
       if (modalDescription) modalDescription.textContent = game.description;
-      if (modalPrice) modalPrice.textContent = \`\${game.price} ر.س\`;
+      if (modalPrice) modalPrice.textContent = `${game.price} ر.س`;
       openModal(gameModal);
     }
   });
