@@ -103,7 +103,9 @@ async function loadUserProfile(user) {
 
     const name  = data?.name  || user.displayName || "مستخدم";
     const phone = data?.phone || "";
-    const email = data?.email || (user.email && !user.email.includes("@rafqa-store.com") ? user.email : "");
+    // الإيميل: من Firestore أولاً، ثم من Google مباشرة، مع تجاهل الإيميل الوهمي
+    const email = data?.email ||
+                  (user.email && !user.email.includes("@rafqa-store.com") ? user.email : "");
     const info  = phone || email || "";
 
     // احذف القديم لو موجود
@@ -479,15 +481,42 @@ if (googleLoginBtn) {
   googleLoginBtn.addEventListener("click", async () => {
     if (typeof firebase === "undefined") return;
     const currentAuth = window.auth || (typeof auth !== "undefined" ? auth : null);
+    const currentDb   = window.db   || (typeof db   !== "undefined" ? db   : null);
     if (!currentAuth) return;
 
     const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+
     try {
-      await currentAuth.signInWithPopup(provider);
+      const result = await currentAuth.signInWithPopup(provider);
+      const user = result.user;
+
+      // حفظ بيانات المستخدم في Firestore
+      if (currentDb) {
+        const userRef = currentDb.collection("users").doc(user.uid);
+        const snap = await userRef.get();
+        if (!snap.exists) {
+          await userRef.set({
+            uid: user.uid,
+            name: user.displayName || "",
+            email: user.email || "",
+            phone: "",
+            provider: "google",
+            createdAt: Date.now()
+          });
+        }
+      }
+
+      updateHeaderUser(user);
       closeModal(loginModal);
-      alert("تم تسجيل الدخول عبر Google بنجاح! 🚀");
+      alert("أهلاً " + (user.displayName || "") + "! تم تسجيل الدخول بـ Google بنجاح 🚀");
     } catch (err) {
-      alert("فشل تسجيل الدخول بـ قوقل: " + err.message);
+      const googleErrors = {
+        "auth/popup-closed-by-user":   "تم إغلاق نافذة Google قبل إتمام تسجيل الدخول.",
+        "auth/popup-blocked":          "المتصفح حجب النافذة، يرجى السماح بها.",
+        "auth/network-request-failed": "تعذّر الاتصال، تحققي من الإنترنت.",
+      };
+      alert(googleErrors[err.code] || "تعذّر تسجيل الدخول بـ Google: " + err.message);
     }
   });
 }
